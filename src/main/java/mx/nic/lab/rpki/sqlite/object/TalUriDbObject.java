@@ -1,10 +1,5 @@
 package mx.nic.lab.rpki.sqlite.object;
 
-import java.io.InputStream;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.sql.Blob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -49,19 +44,9 @@ public class TalUriDbObject extends TalUri implements DatabaseObject {
 			setTalId(null);
 		}
 		setValue(resultSet.getString(VALUE_COLUMN));
-		Blob blobValue = resultSet.getBlob(LOADED_CER_COLUMN);
+		setLoadedCer(resultSet.getBytes(LOADED_CER_COLUMN));
 		if (resultSet.wasNull()) {
 			setLoadedCer(null);
-		} else {
-			try {
-				// FIXME Proof that this really works
-				CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-				InputStream in = blobValue.getBinaryStream();
-				X509Certificate cert = (X509Certificate) certFactory.generateCertificate(in);
-				setLoadedCer(cert);
-			} catch (CertificateException e) {
-				throw new SQLException("The " + LOADED_CER_COLUMN + "couldn't be loaded as a valid certificate", e);
-			}
 		}
 		setLoaded(resultSet.getInt(LOADED_COLUMN) > 0);
 		if (resultSet.wasNull()) {

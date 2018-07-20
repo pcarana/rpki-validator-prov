@@ -5,11 +5,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.Roa;
 import mx.nic.lab.rpki.sqlite.database.QueryGroup;
+import mx.nic.lab.rpki.sqlite.object.RoaDbObject;
 
 /**
  * Model to retrieve ROA data from the database
@@ -29,6 +33,7 @@ public class RoaModel {
 
 	// Queries IDs used by this model
 	private static final String GET_BY_ID = "getById";
+	private static final String GET_ALL = "getAll";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -45,7 +50,14 @@ public class RoaModel {
 		}
 	}
 
-	// FIXME Complete javadoc when the implementation is complete
+	/**
+	 * Get a {@link Roa} by its ID, return null if no data is found
+	 * 
+	 * @param id
+	 * @param connection
+	 * @return The {@link Roa} found
+	 * @throws SQLException
+	 */
 	public static Roa getById(Long id, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_ID);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -55,17 +67,52 @@ public class RoaModel {
 			if (!rs.next()) {
 				return null;
 			}
-			// FIXME TEST
-			if (id > 50) {
-				return null;
-			}
-			Roa roa = new Roa();
+			Roa roa = null;
 			do {
-				roa.setId(rs.getLong("id"));
+				roa = new RoaDbObject(rs);
+				loadRelatedObjects(roa, connection);
 			} while (rs.next());
 
 			return roa;
 		}
+	}
+
+	/**
+	 * Get all the {@link Roa}s, return empty list when no records are found
+	 * 
+	 * @param connection
+	 * @return The list of {@link Roa}s, or empty list when no data is found
+	 * @throws SQLException
+	 */
+	public static List<Roa> getAll(Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_ALL);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			ResultSet rs = statement.executeQuery();
+			if (!rs.next()) {
+				return Collections.emptyList();
+			}
+			List<Roa> roas = new ArrayList<Roa>();
+			do {
+				RoaDbObject roa = new RoaDbObject(rs);
+				loadRelatedObjects(roa, connection);
+				roas.add(roa);
+			} while (rs.next());
+
+			return roas;
+		}
+	}
+
+	/**
+	 * Load all the related objects to the ROA
+	 * 
+	 * @param roa
+	 * @param connection
+	 * @throws SQLException
+	 */
+	private static void loadRelatedObjects(Roa roa, Connection connection) throws SQLException {
+		Long roaId = roa.getId();
+		roa.setGbrs(GbrModel.getByRoaId(roaId, connection));
 	}
 
 	public static QueryGroup getQueryGroup() {
