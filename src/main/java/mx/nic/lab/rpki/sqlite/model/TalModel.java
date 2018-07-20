@@ -34,6 +34,7 @@ public class TalModel {
 	// Queries IDs used by this model
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_ALL = "getAll";
+	private static final String SYNC_BY_ID = "syncById";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -101,6 +102,57 @@ public class TalModel {
 
 			return tals;
 		}
+	}
+
+	/**
+	 * Sync a {@link Tal} by its ID, return null if no data is found
+	 * 
+	 * @param id
+	 * @param connection
+	 * @return The {@link Tal} that will be synchronized
+	 * @throws SQLException
+	 */
+	public static Tal syncById(Long id, Connection connection) throws SQLException {
+		// First get the TAL and check status
+		Tal tal = TalModel.getById(id, connection);
+		if (tal == null) {
+			return null;
+		}
+		if (Tal.Status.SYNCHRONIZING.toString().equalsIgnoreCase(tal.getStatus())) {
+			return tal;
+		}
+		String query = getQueryGroup().getQuery(SYNC_BY_ID);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setLong(1, id);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			int result = statement.executeUpdate();
+			if (result == 0) {
+				return null;
+			}
+
+			return TalModel.getById(id, connection);
+		}
+	}
+
+	/**
+	 * Sync all the {@link Tal}s, return empty list when no files are found nor
+	 * could be synchronized
+	 * 
+	 * @param connection
+	 * @return The list of {@link Tal}s, or empty list when no data is found nor
+	 *         could be synchronized
+	 * @throws SQLException
+	 */
+	public static List<Tal> syncAll(Connection connection) throws SQLException {
+		List<Tal> loadedTals = TalModel.getAll(connection);
+		List<Tal> syncdTals = new ArrayList<Tal>();
+		for (Tal loadedTal : loadedTals) {
+			Tal syncdTal = TalModel.syncById(loadedTal.getId(), connection);
+			if (syncdTal != null) {
+				syncdTals.add(syncdTal);
+			}
+		}
+		return syncdTals;
 	}
 
 	/**

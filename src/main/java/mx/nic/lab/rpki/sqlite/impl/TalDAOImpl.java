@@ -34,4 +34,22 @@ public class TalDAOImpl implements TalDAO {
 		}
 	}
 
+	@Override
+	public Tal syncById(Long id) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return TalModel.syncById(id, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public List<Tal> syncAll() throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return TalModel.syncAll(connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
 }

@@ -7,3 +7,8 @@ select tal_id, tal_last_sync, tal_public_key, tal_status, tal_name
 select tal_id, tal_last_sync, tal_public_key, tal_status, tal_name
   from tal
  order by tal_id;
+
+#syncById
+update tal
+   set tal_status = "synchronizing"
+ where tal_id = ?;
