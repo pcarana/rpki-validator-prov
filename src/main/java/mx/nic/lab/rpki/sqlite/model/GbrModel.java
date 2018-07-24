@@ -22,13 +22,13 @@ import mx.nic.lab.rpki.sqlite.object.GbrDbObject;
  */
 public class GbrModel {
 
-	private final static Logger logger = Logger.getLogger(GbrModel.class.getName());
+	private static final Logger logger = Logger.getLogger(GbrModel.class.getName());
 
 	/**
 	 * Query group ID, it MUST be the same that the .sql file where the queries are
 	 * found
 	 */
-	private final static String QUERY_GROUP = "Gbr";
+	private static final String QUERY_GROUP = "Gbr";
 
 	private static QueryGroup queryGroup = null;
 

@@ -21,13 +21,13 @@ import mx.nic.lab.rpki.sqlite.object.TalFileDbObject;
  */
 public class TalFileModel {
 
-	private final static Logger logger = Logger.getLogger(TalFileModel.class.getName());
+	private static final Logger logger = Logger.getLogger(TalFileModel.class.getName());
 
 	/**
 	 * Query group ID, it MUST be the same that the .sql file where the queries are
 	 * found
 	 */
-	private final static String QUERY_GROUP = "TalFile";
+	private static final String QUERY_GROUP = "TalFile";
 
 	private static QueryGroup queryGroup = null;
 

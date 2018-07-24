@@ -21,13 +21,13 @@ import mx.nic.lab.rpki.sqlite.object.RoaDbObject;
  */
 public class RoaModel {
 
-	private final static Logger logger = Logger.getLogger(RoaModel.class.getName());
+	private static final Logger logger = Logger.getLogger(RoaModel.class.getName());
 
 	/**
 	 * Query group ID, it MUST be the same that the .sql file where the queries are
 	 * found
 	 */
-	private final static String QUERY_GROUP = "Roa";
+	private static final String QUERY_GROUP = "Roa";
 
 	private static QueryGroup queryGroup = null;
 
