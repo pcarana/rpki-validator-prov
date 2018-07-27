@@ -2,11 +2,12 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.util.Properties;
 
-import mx.nic.lab.rpki.db.exception.InitializationException;
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
+import mx.nic.lab.rpki.db.exception.InitializationException;
 import mx.nic.lab.rpki.db.spi.DataAccessImplementation;
 import mx.nic.lab.rpki.db.spi.RoaDAO;
 import mx.nic.lab.rpki.db.spi.SlurmBgpsecDAO;
+import mx.nic.lab.rpki.db.spi.SlurmDAO;
 import mx.nic.lab.rpki.db.spi.SlurmPrefixDAO;
 import mx.nic.lab.rpki.db.spi.TalDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
@@ -42,6 +43,11 @@ public class ProviderImplementation implements DataAccessImplementation {
 	@Override
 	public SlurmBgpsecDAO getSlurmBgpsecDAO() throws ApiDataAccessException {
 		return new SlurmBgpsecDAOImpl();
+	}
+
+	@Override
+	public SlurmDAO getSlurmDAO() throws ApiDataAccessException {
+		return new SlurmDAOImpl();
 	}
 
 }
