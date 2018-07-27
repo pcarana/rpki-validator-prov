@@ -6,6 +6,8 @@ import mx.nic.lab.rpki.db.exception.InitializationException;
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.spi.DataAccessImplementation;
 import mx.nic.lab.rpki.db.spi.RoaDAO;
+import mx.nic.lab.rpki.db.spi.SlurmBgpsecDAO;
+import mx.nic.lab.rpki.db.spi.SlurmPrefixDAO;
 import mx.nic.lab.rpki.db.spi.TalDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
 import mx.nic.lab.rpki.sqlite.model.QueryLoader;
@@ -30,6 +32,16 @@ public class ProviderImplementation implements DataAccessImplementation {
 	@Override
 	public RoaDAO getRoaDAO() throws ApiDataAccessException {
 		return new RoaDAOImpl();
+	}
+
+	@Override
+	public SlurmPrefixDAO getSlurmPrefixDAO() throws ApiDataAccessException {
+		return new SlurmPrefixDAOImpl();
+	}
+
+	@Override
+	public SlurmBgpsecDAO getSlurmBgpsecDAO() throws ApiDataAccessException {
+		return new SlurmBgpsecDAOImpl();
 	}
 
 }
