@@ -26,9 +26,18 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 	}
 
 	@Override
-	public List<SlurmBgpsec> getAll(int id) throws ApiDataAccessException {
+	public List<SlurmBgpsec> getAll() throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return SlurmBgpsecModel.getAll(connection, id);
+			return SlurmBgpsecModel.getAll(connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public List<SlurmBgpsec> getAllByType(int type) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return SlurmBgpsecModel.getAllByType(connection, type);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

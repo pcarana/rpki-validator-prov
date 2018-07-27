@@ -34,6 +34,7 @@ public class SlurmBgpsecModel {
 	// Queries IDs used by this model
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_ALL = "getAll";
+	private static final String GET_ALL_BY_TYPE = "getAllByType";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -83,10 +84,37 @@ public class SlurmBgpsecModel {
 	 * @return The list of {@link SlurmBgpsec}s, or empty list when no data is found
 	 * @throws SQLException
 	 */
-	public static List<SlurmBgpsec> getAll(Connection connection, int id) throws SQLException {
+	public static List<SlurmBgpsec> getAll(Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			statement.setInt(1, id);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			ResultSet rs = statement.executeQuery();
+			if (!rs.next()) {
+				return Collections.emptyList();
+			}
+			List<SlurmBgpsec> slurmBgpsecs = new ArrayList<SlurmBgpsec>();
+			do {
+				SlurmBgpsecDbObject slurmBgpsec = new SlurmBgpsecDbObject(rs);
+				slurmBgpsecs.add(slurmBgpsec);
+			} while (rs.next());
+
+			return slurmBgpsecs;
+		}
+	}
+
+	/**
+	 * Get all the {@link SlurmBgpsec}s by its type, return empty list when no
+	 * records are found
+	 * 
+	 * @param connection
+	 * @param type
+	 * @return The list of {@link SlurmBgpsec}s, or empty list when no data is found
+	 * @throws SQLException
+	 */
+	public static List<SlurmBgpsec> getAllByType(Connection connection, int type) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setInt(1, type);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
 			if (!rs.next()) {
