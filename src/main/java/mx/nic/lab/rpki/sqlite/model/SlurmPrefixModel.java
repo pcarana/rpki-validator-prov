@@ -111,10 +111,10 @@ public class SlurmPrefixModel {
 	 * @return The list of {@link SlurmPrefix}s, or empty list when no data is found
 	 * @throws SQLException
 	 */
-	public static List<SlurmPrefix> getAllByType(Connection connection, int id) throws SQLException {
+	public static List<SlurmPrefix> getAllByType(Connection connection, int type) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			statement.setInt(1, id);
+			statement.setInt(1, type);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
 			if (!rs.next()) {
