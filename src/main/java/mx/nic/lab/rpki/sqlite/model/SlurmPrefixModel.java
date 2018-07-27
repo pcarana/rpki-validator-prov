@@ -34,6 +34,7 @@ public class SlurmPrefixModel {
 	// Queries IDs used by this model
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_ALL = "getAll";
+	private static final String GET_ALL_BY_TYPE = "getAllByType";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -83,8 +84,35 @@ public class SlurmPrefixModel {
 	 * @return The list of {@link SlurmPrefix}s, or empty list when no data is found
 	 * @throws SQLException
 	 */
-	public static List<SlurmPrefix> getAll(Connection connection, int id) throws SQLException {
+	public static List<SlurmPrefix> getAll(Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			ResultSet rs = statement.executeQuery();
+			if (!rs.next()) {
+				return Collections.emptyList();
+			}
+			List<SlurmPrefix> slurmPrefixes = new ArrayList<SlurmPrefix>();
+			do {
+				SlurmPrefixDbObject slurmPrefix = new SlurmPrefixDbObject(rs);
+				slurmPrefixes.add(slurmPrefix);
+			} while (rs.next());
+
+			return slurmPrefixes;
+		}
+	}
+
+	/**
+	 * Get all the {@link SlurmPrefix}s by its type, return empty list when no
+	 * records are found
+	 * 
+	 * @param connection
+	 * @param id
+	 * @return The list of {@link SlurmPrefix}s, or empty list when no data is found
+	 * @throws SQLException
+	 */
+	public static List<SlurmPrefix> getAllByType(Connection connection, int id) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			statement.setInt(1, id);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
