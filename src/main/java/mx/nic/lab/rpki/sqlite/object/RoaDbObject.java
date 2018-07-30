@@ -43,7 +43,7 @@ public class RoaDbObject extends Roa implements DatabaseObject {
 		if (resultSet.wasNull()) {
 			setId(null);
 		}
-		setAsn(resultSet.getInt(ASN_COLUMN));
+		setAsn(resultSet.getLong(ASN_COLUMN));
 		if (resultSet.wasNull()) {
 			setAsn(null);
 		}
