@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
+import mx.nic.lab.rpki.db.exception.http.NotFoundException;
 import mx.nic.lab.rpki.db.pojo.SlurmPrefix;
 import mx.nic.lab.rpki.db.spi.SlurmPrefixDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
@@ -43,4 +44,23 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 		}
 	}
 
+	@Override
+	public SlurmPrefix create(SlurmPrefix newSlurmPrefix) throws ApiDataAccessException {		
+		return newSlurmPrefix;
+	}
+
+	@Override
+	public boolean deleteById(Long id) throws ApiDataAccessException {
+		// First check that the object actually exists
+		try (Connection connection = DatabaseSession.getConnection()) {
+			SlurmPrefix prefix = SlurmPrefixModel.getById(id, connection);
+			if (prefix == null) {
+				throw new NotFoundException();
+			}
+			int deleted = SlurmPrefixModel.deleteById(id, connection);
+			return deleted > 0;
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
 }

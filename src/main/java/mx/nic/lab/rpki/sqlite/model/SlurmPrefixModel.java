@@ -35,6 +35,7 @@ public class SlurmPrefixModel {
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_ALL = "getAll";
 	private static final String GET_ALL_BY_TYPE = "getAllByType";
+	private static final String DELETE_BY_ID = "deleteById";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -127,6 +128,23 @@ public class SlurmPrefixModel {
 			} while (rs.next());
 
 			return slurmPrefixes;
+		}
+	}
+
+	/**
+	 * Delete a {@link SlurmPrefix} by its ID, returns the number of deleted records
+	 * 
+	 * @param id
+	 * @param connection
+	 * @return <code>int</code> number of deleted records
+	 * @throws SQLException
+	 */
+	public static int deleteById(Long id, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(DELETE_BY_ID);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setLong(1, id);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			return statement.executeUpdate();
 		}
 	}
 

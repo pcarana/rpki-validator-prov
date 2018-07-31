@@ -37,3 +37,6 @@ select slp_id,
   from slurm_prefix
  where slp_type = ?
  order by slp_id;
+
+#deleteById
+delete from slurm_prefix where slp_id = ?;
