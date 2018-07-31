@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.pojo.SlurmBgpsec;
 
 /**
@@ -56,5 +57,10 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
 		// FIXME This object can be stored to database, still pending to complete
+	}
+
+	@Override
+	public void validate(Operation operation) throws ApiDataAccessException {
+		// FIXME Add validations
 	}
 }

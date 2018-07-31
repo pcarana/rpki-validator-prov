@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.pojo.Tal;
 
 public class TalDbObject extends Tal implements DatabaseObject {
@@ -44,5 +45,10 @@ public class TalDbObject extends Tal implements DatabaseObject {
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
 		// This object can't be stored to database
+	}
+
+	@Override
+	public void validate(Operation operation) throws ApiDataAccessException {
+		// No special validations for now
 	}
 }
