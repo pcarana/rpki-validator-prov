@@ -173,8 +173,10 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 				}
 			} else if (type == TYPE_ASSERTION) {
 				// Both ASN and a Prefix must exist
-				if (asn == null || startPrefix == null) {
+				if (asn == null) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, ASN, null, ValidationErrorType.NULL));
+				}
+				if (startPrefix == null) {
 					validationErrors
 							.add(new ValidationError(OBJECT_NAME, START_PREFIX, null, ValidationErrorType.NULL));
 				}
@@ -189,7 +191,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 			} else if (!(comment.trim().length() > 0 && comment.trim().length() <= 2000)) {
 				// MAX 2000 (randomly picked to avoid abuse)
 				validationErrors.add(new ValidationError(OBJECT_NAME, COMMENT, comment,
-						ValidationErrorType.LENGTH_OUT_OF_RANGE, 0, 2000));
+						ValidationErrorType.LENGTH_OUT_OF_RANGE, 1, 2000));
 			}
 			// Prefix and prefix length must be together
 			if ((startPrefix != null && prefixLength == null) || (startPrefix == null && prefixLength != null)) {
