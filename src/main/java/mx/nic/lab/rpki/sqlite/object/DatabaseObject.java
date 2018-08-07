@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
+import mx.nic.lab.rpki.db.exception.ValidationException;
 
 /**
  * An object that can be loaded and stored in Database (if required)
@@ -41,8 +41,8 @@ public interface DatabaseObject {
 	 * 
 	 * @param operation
 	 *            {@link Operation} that will be performed on the object instance
-	 * @throws ApiDataAccessException
+	 * @throws ValidationException
 	 *             if something goes wrong
 	 */
-	public void validate(Operation operation) throws ApiDataAccessException;
+	public void validate(Operation operation) throws ValidationException;
 }

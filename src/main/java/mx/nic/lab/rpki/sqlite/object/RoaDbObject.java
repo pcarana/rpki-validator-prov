@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
+import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.Roa;
 
 /**
@@ -81,7 +81,7 @@ public class RoaDbObject extends Roa implements DatabaseObject {
 	}
 
 	@Override
-	public void validate(Operation operation) throws ApiDataAccessException {
+	public void validate(Operation operation) throws ValidationException {
 		// No special validations for now
 	}
 }
