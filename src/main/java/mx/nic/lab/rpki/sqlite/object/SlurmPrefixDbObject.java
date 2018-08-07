@@ -1,5 +1,6 @@
 package mx.nic.lab.rpki.sqlite.object;
 
+import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -7,10 +8,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
-import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
-import mx.nic.lab.rpki.db.exception.http.BadRequestException;
-import mx.nic.lab.rpki.db.exception.http.HttpException;
+import mx.nic.lab.rpki.db.exception.ValidationError;
+import mx.nic.lab.rpki.db.exception.ValidationErrorType;
+import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.SlurmPrefix;
 
 /**
@@ -141,9 +144,11 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 	}
 
 	@Override
-	public void validate(Operation operation) throws ApiDataAccessException {
+	public void validate(Operation operation) throws ValidationException {
+		List<ValidationError> validationErrors = new ArrayList<>();
 		if (operation == Operation.CREATE) {
 			// Check the attributes according to the type
+			// The ID isn't validated since this is a new object
 			Integer type = this.getType();
 			Long asn = this.getAsn();
 			byte[] startPrefix = this.getStartPrefix();
@@ -152,76 +157,152 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 			Integer prefixMaxLength = this.getPrefixMaxLength();
 			String comment = this.getComment();
 
-			// The ID isn't validated since this is a new object
-
-			if (type == null || (type != SlurmPrefix.TYPE_FILTER && type != SlurmPrefix.TYPE_ASSERTION)) {
-				throw new BadRequestException("Invalid type");
-			}
-
-			if (type == SlurmPrefix.TYPE_FILTER) {
-				// Required values
+			if (type == null) {
+				validationErrors.add(new ValidationError(OBJECT_NAME, TYPE, null, ValidationErrorType.NULL));
+			} else if (type == TYPE_FILTER) {
 				// Either an ASN or a Prefix must exist
 				if (asn == null && startPrefix == null) {
-					throw new BadRequestException("ASN and/or prefix null");
+					validationErrors.add(new ValidationError(OBJECT_NAME, ASN, null, ValidationErrorType.NULL));
+					validationErrors
+							.add(new ValidationError(OBJECT_NAME, START_PREFIX, null, ValidationErrorType.NULL));
 				}
 				// Max length is only for assertions
 				if (prefixMaxLength != null) {
-					throw new BadRequestException("Max length must be null");
+					validationErrors.add(new ValidationError(OBJECT_NAME, PREFIX_MAX_LENGTH, prefixMaxLength,
+							ValidationErrorType.NOT_NULL));
 				}
-			} else if (type == SlurmPrefix.TYPE_ASSERTION) {
+			} else if (type == TYPE_ASSERTION) {
 				// Both ASN and a Prefix must exist
 				if (asn == null || startPrefix == null) {
-					throw new BadRequestException("ASN and prefix null");
+					validationErrors.add(new ValidationError(OBJECT_NAME, ASN, null, ValidationErrorType.NULL));
+					validationErrors
+							.add(new ValidationError(OBJECT_NAME, START_PREFIX, null, ValidationErrorType.NULL));
 				}
+			} else {
+				validationErrors
+						.add(new ValidationError(OBJECT_NAME, TYPE, type, ValidationErrorType.UNEXPECTED_VALUE));
 			}
 			// "It is RECOMMENDED that an explanatory comment is also included"
 			// (draft-ietf-sidr-slurm-08)
 			if (comment == null || comment.trim().isEmpty()) {
-				throw new BadRequestException("Comment null");
+				validationErrors.add(new ValidationError(OBJECT_NAME, COMMENT, null, ValidationErrorType.NULL));
 			} else if (!(comment.trim().length() > 0 && comment.trim().length() <= 2000)) {
 				// MAX 2000 (randomly picked to avoid abuse)
-				throw new BadRequestException("Comment out of range");
+				validationErrors.add(new ValidationError(OBJECT_NAME, COMMENT, comment,
+						ValidationErrorType.LENGTH_OUT_OF_RANGE, 0, 2000));
 			}
 			// Prefix and prefix length must be together
 			if ((startPrefix != null && prefixLength == null) || (startPrefix == null && prefixLength != null)) {
-				throw new BadRequestException("Prefix incomplete");
-			}
-			if (asn != null && !(asn >= 0L && asn <= 4294967295L)) {
-				throw new BadRequestException("ASN out of range");
-			}
-			if (prefixLength != null) {
-				validatePrefixLength(startPrefix, prefixLength, "Prefix length out of range");
-				// If max length is indicated, it can't be grater than length
-				if (prefixMaxLength != null && prefixMaxLength < prefixLength) {
-					throw new BadRequestException("Prefix max length can't be greater than prefix length");
+				if (startPrefix == null) {
+					validationErrors
+							.add(new ValidationError(OBJECT_NAME, START_PREFIX, null, ValidationErrorType.NULL));
+				}
+				if (prefixLength == null) {
+					validationErrors
+							.add(new ValidationError(OBJECT_NAME, PREFIX_LENGTH, null, ValidationErrorType.NULL));
 				}
 			}
-			if (prefixMaxLength != null) {
-				validatePrefixLength(startPrefix, prefixMaxLength, "Prefix max length out of range");
+			if (asn != null && !(asn >= 0L && asn <= 4294967295L)) {
+				validationErrors.add(new ValidationError(OBJECT_NAME, ASN, asn, ValidationErrorType.VALUE_OUT_OF_RANGE,
+						0, 4294967295L));
+			}
+			if (prefixLength != null) {
+				validatePrefixLength(startPrefix, prefixLength, PREFIX_LENGTH, validationErrors);
+				// If max length is indicated, it can't be grater than length
+				if (prefixMaxLength != null && type == TYPE_ASSERTION && prefixMaxLength < prefixLength) {
+					validationErrors.add(new ValidationError(OBJECT_NAME, PREFIX_MAX_LENGTH, prefixMaxLength,
+							ValidationErrorType.VALUE_OUT_OF_RANGE, prefixLength, prefixLength));
+				}
+			}
+			if (prefixMaxLength != null && type == TYPE_ASSERTION) {
+				validatePrefixLength(startPrefix, prefixMaxLength, PREFIX_MAX_LENGTH, validationErrors);
 			}
 			// If there's a Start Prefix, then it must exist an End Prefix
-			if (startPrefix != null && endPrefix == null) {
-				throw new BadRequestException("Invalid end prefix");
+			if (startPrefix != null) {
+				validatePrefixValue(startPrefix, prefixLength, START_PREFIX, validationErrors);
+				if (endPrefix == null) {
+					validationErrors.add(new ValidationError(OBJECT_NAME, END_PREFIX, null, ValidationErrorType.NULL));
+				} else {
+					validatePrefixValue(endPrefix, prefixLength, END_PREFIX, validationErrors);
+				}
+			} else {
+				// Otherwise, the end prefix shouldn't exist
+				if (endPrefix != null) {
+					validationErrors
+							.add(new ValidationError(OBJECT_NAME, END_PREFIX, endPrefix, ValidationErrorType.NOT_NULL));
+				}
 			}
+		}
+		if (!validationErrors.isEmpty()) {
+			throw new ValidationException(validationErrors);
 		}
 	}
 
-	private void validatePrefixLength(byte[] prefix, int prefixLength, String errorMessage) throws HttpException {
+	/**
+	 * Validates the prefix length based on the <code>prefix</code> and
+	 * <code>prefixLength</code> received; if there's an error then add it to the
+	 * <code>validationErrors</code> list using the <code>prefixLengthFieldId</code>
+	 * 
+	 * @param prefix
+	 * @param prefixLength
+	 * @param prefixLengthFieldId
+	 * @param validationErrors
+	 */
+	private void validatePrefixLength(byte[] prefix, int prefixLength, String prefixLengthFieldId,
+			List<ValidationError> validationErrors) {
 		// Prefix length according to IP type
-		boolean isIpv4 = false;
 		int min = 0;
-		int max = 128;
+		int max = 0;
 		try {
 			InetAddress prefixAddress = InetAddress.getByAddress(prefix);
-			isIpv4 = prefixAddress instanceof Inet4Address;
+			max = prefixAddress instanceof Inet4Address ? 32 : 128;
 		} catch (UnknownHostException e) {
-			throw new BadRequestException("Invalid prefix");
-		}
-		if (isIpv4) {
-			max = 32;
+			validationErrors
+					.add(new ValidationError(OBJECT_NAME, START_PREFIX, prefix, ValidationErrorType.UNEXPECTED_TYPE));
+			return;
 		}
 		if (!(prefixLength >= min && prefixLength <= max)) {
-			throw new BadRequestException(errorMessage);
+			validationErrors.add(new ValidationError(OBJECT_NAME, prefixLengthFieldId, prefix,
+					ValidationErrorType.VALUE_OUT_OF_RANGE, min, max));
+		}
+	}
+
+	/**
+	 * Validate the prefix value to assert that's actually an IP block, not any IP
+	 * address, if there's an error then add it to the <code>validationErrors</code>
+	 * list
+	 * 
+	 * @param prefix
+	 * @param prefixLength
+	 * @param prefixFieldId
+	 * @param validationErrors
+	 */
+	private void validatePrefixValue(byte[] prefix, int prefixLength, String prefixFieldId,
+			List<ValidationError> validationErrors) {
+		int maxBytes = 0;
+		try {
+			InetAddress prefixAddress = InetAddress.getByAddress(prefix);
+			maxBytes = prefixAddress instanceof Inet4Address ? 4 : 16;
+		} catch (UnknownHostException e) {
+			validationErrors
+					.add(new ValidationError(OBJECT_NAME, prefixFieldId, prefix, ValidationErrorType.UNEXPECTED_TYPE));
+			return;
+		}
+		int bytesBase = prefixLength / 8;
+		int bitsBase = prefixLength % 8;
+		byte[] prefixLengthMask = new byte[maxBytes];
+		int currByte = 0;
+		for (; currByte < bytesBase; currByte++) {
+			prefixLengthMask[currByte] |= 255;
+		}
+		if (currByte < prefixLengthMask.length) {
+			prefixLengthMask[currByte] = (byte) (255 << (8 - bitsBase));
+		}
+		BigInteger ip = new BigInteger(prefix);
+		BigInteger mask = new BigInteger(prefixLengthMask);
+		if (!ip.or(mask).equals(mask)) {
+			validationErrors
+					.add(new ValidationError(OBJECT_NAME, prefixFieldId, prefix, ValidationErrorType.UNEXPECTED_VALUE));
 		}
 	}
 }
