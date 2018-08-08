@@ -49,7 +49,7 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 	}
 
 	@Override
-	public SlurmBgpsec create(SlurmBgpsec newSlurmBgpsec) throws ApiDataAccessException {
+	public Long create(SlurmBgpsec newSlurmBgpsec) throws ApiDataAccessException {
 		SlurmBgpsecDbObject slurmBgpsecDb = new SlurmBgpsecDbObject(newSlurmBgpsec);
 		slurmBgpsecDb.validate(Operation.CREATE);
 

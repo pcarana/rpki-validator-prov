@@ -185,10 +185,10 @@ public class SlurmBgpsecModel {
 	 * 
 	 * @param newSlurmBgpsec
 	 * @param connection
-	 * @return The {@link SlurmBgpsec} created
+	 * @return The ID of the {@link SlurmBgpsec} created
 	 * @throws SQLException
 	 */
-	public static SlurmBgpsec create(SlurmBgpsec newSlurmBgpsec, Connection connection) throws SQLException {
+	public static Long create(SlurmBgpsec newSlurmBgpsec, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			Long newId = getLastId(connection) + 1;
@@ -200,7 +200,7 @@ public class SlurmBgpsecModel {
 			if (created < 1) {
 				return null;
 			}
-			return getById(newId, connection);
+			return newId;
 		}
 	}
 
@@ -217,7 +217,7 @@ public class SlurmBgpsecModel {
 			ResultSet rs = statement.executeQuery();
 			// First in the table
 			if (!rs.next()) {
-				return 1L;
+				return 0L;
 			}
 			return rs.getLong(1);
 		}

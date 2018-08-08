@@ -194,10 +194,10 @@ public class SlurmPrefixModel {
 	 * 
 	 * @param newSlurmPrefix
 	 * @param connection
-	 * @return The {@link SlurmPrefix} created
+	 * @return The ID of the {@link SlurmPrefix} created
 	 * @throws SQLException
 	 */
-	public static SlurmPrefix create(SlurmPrefix newSlurmPrefix, Connection connection) throws SQLException {
+	public static Long create(SlurmPrefix newSlurmPrefix, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			Long newId = getLastId(connection) + 1;
@@ -209,7 +209,7 @@ public class SlurmPrefixModel {
 			if (created < 1) {
 				return null;
 			}
-			return getById(newId, connection);
+			return newId;
 		}
 	}
 
@@ -243,7 +243,7 @@ public class SlurmPrefixModel {
 			ResultSet rs = statement.executeQuery();
 			// First in the table
 			if (!rs.next()) {
-				return 1L;
+				return 0L;
 			}
 			return rs.getLong(1);
 		}
