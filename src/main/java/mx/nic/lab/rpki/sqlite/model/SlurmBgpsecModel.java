@@ -38,6 +38,7 @@ public class SlurmBgpsecModel {
 	private static final String GET_LAST_ID = "getLastId";
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
+	private static final String DELETE_BY_ID = "deleteById";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -201,6 +202,23 @@ public class SlurmBgpsecModel {
 				return null;
 			}
 			return newId;
+		}
+	}
+
+	/**
+	 * Delete a {@link SlurmBgpsec} by its ID, returns the number of deleted records
+	 * 
+	 * @param id
+	 * @param connection
+	 * @return <code>int</code> number of deleted records
+	 * @throws SQLException
+	 */
+	public static int deleteById(Long id, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(DELETE_BY_ID);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setLong(1, id);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			return statement.executeUpdate();
 		}
 	}
 

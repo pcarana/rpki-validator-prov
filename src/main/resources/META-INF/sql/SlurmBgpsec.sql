@@ -48,3 +48,6 @@ insert into slurm_bgpsec (
        slb_type,
        slb_comment)
 values (?, ?, ?, ?, ?, ?);
+
+#deleteById
+delete from slurm_bgpsec where slb_id = ?;

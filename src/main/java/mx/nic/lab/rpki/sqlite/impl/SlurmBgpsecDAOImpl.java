@@ -65,4 +65,20 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 		}
 	}
 
+	@Override
+	public boolean deleteById(Long id) throws ApiDataAccessException {
+		// First check that the object actually exists
+		try (Connection connection = DatabaseSession.getConnection()) {
+			SlurmBgpsec bgpsec = SlurmBgpsecModel.getById(id, connection);
+			if (bgpsec == null) {
+				throw new ValidationException(
+						new ValidationError(SlurmBgpsec.OBJECT_NAME, ValidationErrorType.OBJECT_NOT_EXISTS));
+			}
+			int deleted = SlurmBgpsecModel.deleteById(id, connection);
+			return deleted > 0;
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
 }
