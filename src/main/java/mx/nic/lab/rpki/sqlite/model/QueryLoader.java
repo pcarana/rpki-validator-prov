@@ -23,6 +23,7 @@ public class QueryLoader {
 	private static void loadModelsQueries(String schema) {
 		GbrModel.loadQueryGroup(schema);
 		RoaModel.loadQueryGroup(schema);
+		RtrSessionModel.loadQueryGroup(schema);
 		SlurmBgpsecModel.loadQueryGroup(schema);
 		SlurmPrefixModel.loadQueryGroup(schema);
 		TalModel.loadQueryGroup(schema);
