@@ -225,7 +225,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 				if (endPrefix == null) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, END_PREFIX, null, ValidationErrorType.NULL));
 				} else {
-					validatePrefixValue(endPrefix, prefixLength, END_PREFIX, validationErrors);
+					validatePrefixValue(endPrefix, prefixMaxLength == null ? prefixLength : prefixMaxLength, END_PREFIX, validationErrors);
 				}
 			} else {
 				// Otherwise, the end prefix shouldn't exist
