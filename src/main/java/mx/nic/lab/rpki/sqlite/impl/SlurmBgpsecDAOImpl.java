@@ -2,6 +2,7 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
@@ -31,18 +32,20 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 	}
 
 	@Override
-	public List<SlurmBgpsec> getAll() throws ApiDataAccessException {
+	public List<SlurmBgpsec> getAll(int limit, int offset, LinkedHashMap<String, String> sort)
+			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return SlurmBgpsecModel.getAll(connection);
+			return SlurmBgpsecModel.getAll(limit, offset, sort, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
 	}
 
 	@Override
-	public List<SlurmBgpsec> getAllByType(int type) throws ApiDataAccessException {
+	public List<SlurmBgpsec> getAllByType(int type, int limit, int offset, LinkedHashMap<String, String> sort)
+			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return SlurmBgpsecModel.getAllByType(connection, type);
+			return SlurmBgpsecModel.getAllByType(type, limit, offset, sort, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

@@ -2,6 +2,7 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
@@ -31,18 +32,20 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 	}
 
 	@Override
-	public List<SlurmPrefix> getAll() throws ApiDataAccessException {
+	public List<SlurmPrefix> getAll(int limit, int offset, LinkedHashMap<String, String> sort)
+			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return SlurmPrefixModel.getAll(connection);
+			return SlurmPrefixModel.getAll(limit, offset, sort, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
 	}
 
 	@Override
-	public List<SlurmPrefix> getAllByType(int type) throws ApiDataAccessException {
+	public List<SlurmPrefix> getAllByType(int type, int limit, int offset, LinkedHashMap<String, String> sort)
+			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return SlurmPrefixModel.getAllByType(connection, type);
+			return SlurmPrefixModel.getAllByType(type, limit, offset, sort, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

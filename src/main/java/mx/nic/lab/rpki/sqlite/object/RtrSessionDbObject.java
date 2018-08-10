@@ -3,6 +3,8 @@ package mx.nic.lab.rpki.sqlite.object;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.RtrSession;
@@ -22,6 +24,23 @@ public class RtrSessionDbObject extends RtrSession implements DatabaseObject {
 	public static final String SESSION_ID_COLUMN = "rts_session_id";
 	public static final String SERIAL_NUMBER_COLUMN = "rts_serial_number";
 	public static final String VERSION_COLUMN = "rts_version";
+
+	/**
+	 * Mapping of the {@link RtrSession} properties to its corresponding DB column
+	 */
+	public static final Map<String, String> propertyToColumnMap;
+	static {
+		propertyToColumnMap = new HashMap<>();
+		propertyToColumnMap.put(ID, ID_COLUMN);
+		propertyToColumnMap.put(ADDRESS, ADDRESS_COLUMN);
+		propertyToColumnMap.put(PORT, PORT_COLUMN);
+		propertyToColumnMap.put(STATUS, STATUS_COLUMN);
+		propertyToColumnMap.put(LAST_REQUEST, LAST_REQUEST_COLUMN);
+		propertyToColumnMap.put(LAST_RESPONSE, LAST_RESPONSE_COLUMN);
+		propertyToColumnMap.put(SESSION_ID, SESSION_ID_COLUMN);
+		propertyToColumnMap.put(SERIAL_NUMBER, SERIAL_NUMBER_COLUMN);
+		propertyToColumnMap.put(VERSION, VERSION_COLUMN);
+	}
 
 	public RtrSessionDbObject() {
 		super();

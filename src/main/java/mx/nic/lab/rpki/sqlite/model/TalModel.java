@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -81,12 +82,17 @@ public class TalModel {
 	/**
 	 * Get all the {@link Tal}s, return empty list when no files are found
 	 * 
+	 * @param limit
+	 * @param offset
+	 * @param sort
 	 * @param connection
 	 * @return The list of {@link Tal}s, or empty list when no data is found
 	 * @throws SQLException
 	 */
-	public static List<Tal> getAll(Connection connection) throws SQLException {
+	public static List<Tal> getAll(int limit, int offset, LinkedHashMap<String, String> sort, Connection connection)
+			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
+		query = Util.getQueryWithPaging(query, limit, offset, sort, TalDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
@@ -144,7 +150,7 @@ public class TalModel {
 	 * @throws SQLException
 	 */
 	public static List<Tal> syncAll(Connection connection) throws SQLException {
-		List<Tal> loadedTals = TalModel.getAll(connection);
+		List<Tal> loadedTals = TalModel.getAll(-1, -1, null, connection);
 		List<Tal> syncdTals = new ArrayList<Tal>();
 		for (Tal loadedTal : loadedTals) {
 			Tal syncdTal = TalModel.syncById(loadedTal.getId(), connection);

@@ -16,7 +16,8 @@ select slb_id,
        slb_type,
        slb_comment
   from slurm_bgpsec
- order by slb_id;
+[order]
+[limit];
 
 #getAllByType
 select slb_id,
@@ -27,7 +28,8 @@ select slb_id,
        slb_comment
   from slurm_bgpsec
  where slb_type = ?
- order by slb_id;
+[order]
+[limit];
 
 #getLastId
 select max(slb_id)

@@ -2,6 +2,7 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
@@ -26,9 +27,9 @@ public class TalDAOImpl implements TalDAO {
 	}
 
 	@Override
-	public List<Tal> getAll() throws ApiDataAccessException {
+	public List<Tal> getAll(int limit, int offset, LinkedHashMap<String, String> sort) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return TalModel.getAll(connection);
+			return TalModel.getAll(limit, offset, sort, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

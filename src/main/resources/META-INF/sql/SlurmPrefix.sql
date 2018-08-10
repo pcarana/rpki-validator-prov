@@ -22,7 +22,8 @@ select slp_id,
        slp_type,
        slp_comment
   from slurm_prefix
- order by slp_id;
+[order]
+[limit];
 
 #getAllByType
 select slp_id,
@@ -36,7 +37,8 @@ select slp_id,
        slp_comment
   from slurm_prefix
  where slp_type = ?
- order by slp_id;
+[order]
+[limit];
 
 #getLastId
 select max(slp_id)

@@ -6,7 +6,9 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import mx.nic.lab.rpki.db.exception.ValidationError;
 import mx.nic.lab.rpki.db.exception.ValidationErrorType;
@@ -25,6 +27,20 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 	public static final String PUBLIC_KEY_COLUMN = "slb_public_key";
 	public static final String TYPE_COLUMN = "slb_type";
 	public static final String COMMENT_COLUMN = "slb_comment";
+
+	/**
+	 * Mapping of the {@link SlurmBgpsec} properties to its corresponding DB column
+	 */
+	public static final Map<String, String> propertyToColumnMap;
+	static {
+		propertyToColumnMap = new HashMap<>();
+		propertyToColumnMap.put(ID, ID_COLUMN);
+		propertyToColumnMap.put(ASN, ASN_COLUMN);
+		propertyToColumnMap.put(SKI, SKI_COLUMN);
+		propertyToColumnMap.put(PUBLIC_KEY, PUBLIC_KEY_COLUMN);
+		propertyToColumnMap.put(TYPE, TYPE_COLUMN);
+		propertyToColumnMap.put(COMMENT, COMMENT_COLUMN);
+	}
 
 	public SlurmBgpsecDbObject() {
 		super();

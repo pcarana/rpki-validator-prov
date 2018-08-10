@@ -3,6 +3,8 @@ package mx.nic.lab.rpki.sqlite.object;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.Tal;
@@ -14,6 +16,19 @@ public class TalDbObject extends Tal implements DatabaseObject {
 	public static final String PUBLIC_KEY_COLUMN = "tal_public_key";
 	public static final String STATUS_COLUMN = "tal_status";
 	public static final String NAME_COLUMN = "tal_name";
+
+	/**
+	 * Mapping of the {@link Tal} properties to its corresponding DB column
+	 */
+	public static final Map<String, String> propertyToColumnMap;
+	static {
+		propertyToColumnMap = new HashMap<>();
+		propertyToColumnMap.put(ID, ID_COLUMN);
+		propertyToColumnMap.put(LAST_SYNC, LAST_SYNC_COLUMN);
+		propertyToColumnMap.put(PUBLIC_KEY, PUBLIC_KEY_COLUMN);
+		propertyToColumnMap.put(STATUS, STATUS_COLUMN);
+		propertyToColumnMap.put(NAME, NAME_COLUMN);
+	}
 
 	public TalDbObject() {
 		super();

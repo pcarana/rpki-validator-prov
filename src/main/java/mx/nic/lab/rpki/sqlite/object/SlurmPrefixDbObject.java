@@ -9,7 +9,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import mx.nic.lab.rpki.db.exception.ValidationError;
 import mx.nic.lab.rpki.db.exception.ValidationErrorType;
@@ -31,6 +33,23 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 	public static final String PREFIX_MAX_LENGTH_COLUMN = "slp_prefix_max_length";
 	public static final String TYPE_COLUMN = "slp_type";
 	public static final String COMMENT_COLUMN = "slp_comment";
+
+	/**
+	 * Mapping of the {@link SlurmPrefix} properties to its corresponding DB column
+	 */
+	public static final Map<String, String> propertyToColumnMap;
+	static {
+		propertyToColumnMap = new HashMap<>();
+		propertyToColumnMap.put(ID, ID_COLUMN);
+		propertyToColumnMap.put(ASN, ASN_COLUMN);
+		propertyToColumnMap.put(PREFIX_TEXT, PREFIX_TEXT_COLUMN);
+		propertyToColumnMap.put(START_PREFIX, START_PREFIX_COLUMN);
+		propertyToColumnMap.put(END_PREFIX, END_PREFIX_COLUMN);
+		propertyToColumnMap.put(PREFIX_LENGTH, PREFIX_LENGTH_COLUMN);
+		propertyToColumnMap.put(PREFIX_MAX_LENGTH, PREFIX_MAX_LENGTH_COLUMN);
+		propertyToColumnMap.put(TYPE, TYPE_COLUMN);
+		propertyToColumnMap.put(COMMENT, COMMENT_COLUMN);
+	}
 
 	public SlurmPrefixDbObject() {
 		super();
@@ -225,7 +244,8 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 				if (endPrefix == null) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, END_PREFIX, null, ValidationErrorType.NULL));
 				} else {
-					validatePrefixValue(endPrefix, prefixMaxLength == null ? prefixLength : prefixMaxLength, END_PREFIX, validationErrors);
+					validatePrefixValue(endPrefix, prefixMaxLength == null ? prefixLength : prefixMaxLength, END_PREFIX,
+							validationErrors);
 				}
 			} else {
 				// Otherwise, the end prefix shouldn't exist
