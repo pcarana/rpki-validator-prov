@@ -2,6 +2,7 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
@@ -26,9 +27,9 @@ public class RoaDAOImpl implements RoaDAO {
 	}
 
 	@Override
-	public List<Roa> getAll() throws ApiDataAccessException {
+	public List<Roa> getAll(int limit, int offset, LinkedHashMap<String, String> sort) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return RoaModel.getAll(connection);
+			return RoaModel.getAll(limit, offset, sort, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

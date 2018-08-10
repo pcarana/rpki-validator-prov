@@ -3,6 +3,8 @@ package mx.nic.lab.rpki.sqlite.object;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.Roa;
@@ -22,6 +24,23 @@ public class RoaDbObject extends Roa implements DatabaseObject {
 	public static final String PREFIX_MAX_LENGTH_COLUMN = "roa_prefix_max_length";
 	public static final String CMS_DATA_COLUMN = "roa_cms_data";
 	public static final String TAL_ID_COLUMN = "tal_id";
+
+	/**
+	 * Mapping of the {@link Roa} properties to its corresponding DB column
+	 */
+	public static final Map<String, String> propertyToColumnMap;
+	static {
+		propertyToColumnMap = new HashMap<>();
+		propertyToColumnMap.put(ID, ID_COLUMN);
+		propertyToColumnMap.put(ASN, ASN_COLUMN);
+		propertyToColumnMap.put(PREFIX_TEXT, PREFIX_TEXT_COLUMN);
+		propertyToColumnMap.put(START_PREFIX, START_PREFIX_COLUMN);
+		propertyToColumnMap.put(END_PREFIX, END_PREFIX_COLUMN);
+		propertyToColumnMap.put(PREFIX_LENGTH, PREFIX_LENGTH_COLUMN);
+		propertyToColumnMap.put(PREFIX_MAX_LENGTH, PREFIX_MAX_LENGTH_COLUMN);
+		propertyToColumnMap.put(CMS_DATA, CMS_DATA_COLUMN);
+		propertyToColumnMap.put(TAL_ID, TAL_ID_COLUMN);
+	}
 
 	public RoaDbObject() {
 		super();

@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -84,12 +85,17 @@ public class RoaModel {
 	/**
 	 * Get all the {@link Roa}s, return empty list when no records are found
 	 * 
+	 * @param limit
+	 * @param offset
+	 * @param sort
 	 * @param connection
 	 * @return The list of {@link Roa}s, or empty list when no data is found
 	 * @throws SQLException
 	 */
-	public static List<Roa> getAll(Connection connection) throws SQLException {
+	public static List<Roa> getAll(int limit, int offset, LinkedHashMap<String, String> sort, Connection connection)
+			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
+		query = Util.getQueryWithPaging(query, limit, offset, sort, RoaDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
