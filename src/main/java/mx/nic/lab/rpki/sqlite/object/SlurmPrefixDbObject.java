@@ -203,8 +203,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 				validationErrors
 						.add(new ValidationError(OBJECT_NAME, TYPE, type, ValidationErrorType.UNEXPECTED_VALUE));
 			}
-			// "It is RECOMMENDED that an explanatory comment is also included"
-			// (draft-ietf-sidr-slurm-08)
+			// "It is RECOMMENDED that an explanatory comment is also included" (RFC 8416)
 			if (comment == null || comment.trim().isEmpty()) {
 				validationErrors.add(new ValidationError(OBJECT_NAME, COMMENT, null, ValidationErrorType.NULL));
 			} else if (!(comment.trim().length() > 0 && comment.trim().length() <= 2000)) {

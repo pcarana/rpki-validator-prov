@@ -24,7 +24,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 	public static final String ID_COLUMN = "slb_id";
 	public static final String ASN_COLUMN = "slb_asn";
 	public static final String SKI_COLUMN = "slb_ski";
-	public static final String PUBLIC_KEY_COLUMN = "slb_public_key";
+	public static final String ROUTER_PUBLIC_KEY_COLUMN = "slb_public_key";
 	public static final String TYPE_COLUMN = "slb_type";
 	public static final String COMMENT_COLUMN = "slb_comment";
 
@@ -37,7 +37,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 		propertyToColumnMap.put(ID, ID_COLUMN);
 		propertyToColumnMap.put(ASN, ASN_COLUMN);
 		propertyToColumnMap.put(SKI, SKI_COLUMN);
-		propertyToColumnMap.put(PUBLIC_KEY, PUBLIC_KEY_COLUMN);
+		propertyToColumnMap.put(ROUTER_PUBLIC_KEY, ROUTER_PUBLIC_KEY_COLUMN);
 		propertyToColumnMap.put(TYPE, TYPE_COLUMN);
 		propertyToColumnMap.put(COMMENT, COMMENT_COLUMN);
 	}
@@ -55,7 +55,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 		this.setId(slurmBgpsec.getId());
 		this.setAsn(slurmBgpsec.getAsn());
 		this.setSki(slurmBgpsec.getSki());
-		this.setPublicKey(slurmBgpsec.getPublicKey());
+		this.setRouterPublicKey(slurmBgpsec.getRouterPublicKey());
 		this.setType(slurmBgpsec.getType());
 		this.setComment(slurmBgpsec.getComment());
 	}
@@ -82,7 +82,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 			setAsn(null);
 		}
 		setSki(resultSet.getString(SKI_COLUMN));
-		setPublicKey(resultSet.getString(PUBLIC_KEY_COLUMN));
+		setRouterPublicKey(resultSet.getString(ROUTER_PUBLIC_KEY_COLUMN));
 		setType(resultSet.getInt(TYPE_COLUMN));
 		if (resultSet.wasNull()) {
 			setType(null);
@@ -103,8 +103,8 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 		} else {
 			statement.setNull(3, Types.VARCHAR);
 		}
-		if (getPublicKey() != null) {
-			statement.setString(4, getPublicKey());
+		if (getRouterPublicKey() != null) {
+			statement.setString(4, getRouterPublicKey());
 		} else {
 			statement.setNull(4, Types.VARCHAR);
 		}
@@ -129,7 +129,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 			Integer type = this.getType();
 			Long asn = this.getAsn();
 			String ski = getTrimmedString(this.getSki());
-			String publicKey = getTrimmedString(this.getPublicKey());
+			String routerPublicKey = getTrimmedString(this.getRouterPublicKey());
 			String comment = getTrimmedString(this.getComment());
 
 			if (type == null) {
@@ -140,10 +140,10 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 					validationErrors.add(new ValidationError(OBJECT_NAME, ASN, null, ValidationErrorType.NULL));
 					validationErrors.add(new ValidationError(OBJECT_NAME, SKI, null, ValidationErrorType.NULL));
 				}
-				// Public key is only for assertions
-				if (publicKey != null) {
-					validationErrors
-							.add(new ValidationError(OBJECT_NAME, PUBLIC_KEY, publicKey, ValidationErrorType.NOT_NULL));
+				// Router's Public key is only for assertions
+				if (routerPublicKey != null) {
+					validationErrors.add(new ValidationError(OBJECT_NAME, ROUTER_PUBLIC_KEY, routerPublicKey,
+							ValidationErrorType.NOT_NULL));
 				}
 			} else if (type == TYPE_ASSERTION) {
 				// ASN, SKI and Public key must exist
@@ -153,15 +153,15 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 				if (ski == null) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, SKI, null, ValidationErrorType.NULL));
 				}
-				if (publicKey == null) {
-					validationErrors.add(new ValidationError(OBJECT_NAME, PUBLIC_KEY, null, ValidationErrorType.NULL));
+				if (routerPublicKey == null) {
+					validationErrors
+							.add(new ValidationError(OBJECT_NAME, ROUTER_PUBLIC_KEY, null, ValidationErrorType.NULL));
 				}
 			} else {
 				validationErrors
 						.add(new ValidationError(OBJECT_NAME, TYPE, type, ValidationErrorType.UNEXPECTED_VALUE));
 			}
-			// "It is RECOMMENDED that an explanatory comment is also included"
-			// (draft-ietf-sidr-slurm-08)
+			// "It is RECOMMENDED that an explanatory comment is also included" (RFC 8416)
 			if (comment == null || comment.trim().isEmpty()) {
 				validationErrors.add(new ValidationError(OBJECT_NAME, COMMENT, null, ValidationErrorType.NULL));
 			} else if (!(comment.trim().length() > 0 && comment.trim().length() <= 2000)) {
@@ -177,11 +177,11 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 							.add(new ValidationError(OBJECT_NAME, SKI, ski, ValidationErrorType.UNEXPECTED_VALUE));
 				}
 			}
-			if (publicKey != null) {
+			if (routerPublicKey != null) {
 				try {
-					Base64.getUrlDecoder().decode(publicKey);
+					Base64.getUrlDecoder().decode(routerPublicKey);
 				} catch (IllegalArgumentException e) {
-					validationErrors.add(new ValidationError(OBJECT_NAME, PUBLIC_KEY, publicKey,
+					validationErrors.add(new ValidationError(OBJECT_NAME, ROUTER_PUBLIC_KEY, routerPublicKey,
 							ValidationErrorType.UNEXPECTED_VALUE));
 				}
 			}

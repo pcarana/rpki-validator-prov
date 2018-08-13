@@ -169,8 +169,8 @@ public class SlurmBgpsecModel {
 			parameters.append(" and ").append(SlurmBgpsecDbObject.SKI_COLUMN).append(" = ? ");
 			skiIdx = currentIdx++;
 		}
-		if (slurmBgpsec.getPublicKey() != null) {
-			parameters.append(" and ").append(SlurmBgpsecDbObject.PUBLIC_KEY_COLUMN).append(" = ? ");
+		if (slurmBgpsec.getRouterPublicKey() != null) {
+			parameters.append(" and ").append(SlurmBgpsecDbObject.ROUTER_PUBLIC_KEY_COLUMN).append(" = ? ");
 			publicKeyIdx = currentIdx++;
 		}
 		query = query.replace("[where]", parameters.toString());
@@ -183,7 +183,7 @@ public class SlurmBgpsecModel {
 				statement.setString(skiIdx, slurmBgpsec.getSki());
 			}
 			if (publicKeyIdx > 0) {
-				statement.setString(publicKeyIdx, slurmBgpsec.getPublicKey());
+				statement.setString(publicKeyIdx, slurmBgpsec.getRouterPublicKey());
 			}
 
 			ResultSet rs = statement.executeQuery();
