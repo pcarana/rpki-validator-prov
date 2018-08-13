@@ -2,19 +2,19 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.exception.ValidationError;
 import mx.nic.lab.rpki.db.exception.ValidationErrorType;
 import mx.nic.lab.rpki.db.exception.ValidationException;
+import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.SlurmPrefix;
 import mx.nic.lab.rpki.db.spi.SlurmPrefixDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
 import mx.nic.lab.rpki.sqlite.model.SlurmPrefixModel;
-import mx.nic.lab.rpki.sqlite.object.SlurmPrefixDbObject;
 import mx.nic.lab.rpki.sqlite.object.DatabaseObject.Operation;
+import mx.nic.lab.rpki.sqlite.object.SlurmPrefixDbObject;
 
 /**
  * Implementation to retrieve SLURM Prefix data
@@ -32,20 +32,18 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 	}
 
 	@Override
-	public List<SlurmPrefix> getAll(int limit, int offset, LinkedHashMap<String, String> sort)
-			throws ApiDataAccessException {
+	public List<SlurmPrefix> getAll(PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return SlurmPrefixModel.getAll(limit, offset, sort, connection);
+			return SlurmPrefixModel.getAll(pagingParams, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
 	}
 
 	@Override
-	public List<SlurmPrefix> getAllByType(int type, int limit, int offset, LinkedHashMap<String, String> sort)
-			throws ApiDataAccessException {
+	public List<SlurmPrefix> getAllByType(int type, PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return SlurmPrefixModel.getAllByType(type, limit, offset, sort, connection);
+			return SlurmPrefixModel.getAllByType(type, pagingParams, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

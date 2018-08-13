@@ -2,10 +2,10 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
+import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Tal;
 import mx.nic.lab.rpki.db.spi.TalDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
@@ -27,9 +27,9 @@ public class TalDAOImpl implements TalDAO {
 	}
 
 	@Override
-	public List<Tal> getAll(int limit, int offset, LinkedHashMap<String, String> sort) throws ApiDataAccessException {
+	public List<Tal> getAll(PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return TalModel.getAll(limit, offset, sort, connection);
+			return TalModel.getAll(pagingParams, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

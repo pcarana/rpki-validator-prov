@@ -7,11 +7,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.RtrSession;
 import mx.nic.lab.rpki.sqlite.database.QueryGroup;
 import mx.nic.lab.rpki.sqlite.object.RtrSessionDbObject;
@@ -53,17 +53,14 @@ public class RtrSessionModel {
 	/**
 	 * Get all the {@link RtrSession}s, return empty list when no files are found
 	 * 
-	 * @param limit
-	 * @param offset
-	 * @param sort
+	 * @param pagingParams
 	 * @param connection
 	 * @return The list of {@link RtrSession}s, or empty list when no data is found
 	 * @throws SQLException
 	 */
-	public static List<RtrSession> getAll(int limit, int offset, LinkedHashMap<String, String> sort,
-			Connection connection) throws SQLException {
+	public static List<RtrSession> getAll(PagingParameters pagingParams, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
-		query = Util.getQueryWithPaging(query, limit, offset, sort, RtrSessionDbObject.propertyToColumnMap);
+		query = Util.getQueryWithPaging(query, pagingParams, RtrSessionDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
