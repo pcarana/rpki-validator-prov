@@ -3,6 +3,10 @@ package mx.nic.lab.rpki.sqlite.object;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.Date;
 
 import mx.nic.lab.rpki.db.exception.ValidationException;
 
@@ -13,10 +17,56 @@ import mx.nic.lab.rpki.db.exception.ValidationException;
 public interface DatabaseObject {
 
 	/**
+	 * Format used by SQLite to represent dates as TEXT fields (ISO8601, check
+	 * <a href="https://www.sqlite.org/datatype3.html#date_and_time_datatype">SQLite
+	 * Date and Time Datatype</a>)
+	 */
+	public static final String DATE_AS_TEXT_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+
+	/**
 	 * Possible operations to perform over an instance of a {@link DatabaseObject}
 	 */
 	public enum Operation {
 		CREATE, UPDATE, DELETE
+	}
+
+	/**
+	 * Get a string loaded from the DB and return it as {@link Instant}, return null
+	 * if there was an error
+	 * 
+	 * @param stringDate
+	 * @return
+	 */
+	public default Instant getStringDateAsInstant(String stringDate) {
+		if (stringDate == null) {
+			return null;
+		}
+		SimpleDateFormat df = new SimpleDateFormat(DATE_AS_TEXT_FORMAT);
+		try {
+			Date tempDate = df.parse(stringDate);
+			return tempDate.toInstant();
+		} catch (ParseException e) {
+			return null;
+		}
+	}
+
+	/**
+	 * Get a string from the DB and return it as an {@link Enum} of type
+	 * <code>T</code>, return null if there was an error
+	 * 
+	 * @param enumClass
+	 * @param value
+	 * @return
+	 */
+	public default <T extends Enum<T>> T getStringAsEnum(Class<T> enumClass, String value) {
+		if (value == null) {
+			return null;
+		}
+		try {
+			return Enum.valueOf(enumClass, value);
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
 	}
 
 	/**

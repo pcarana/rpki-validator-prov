@@ -39,7 +39,7 @@ select max(slb_id)
 select 1
   from slurm_bgpsec
  where slb_type = ?
- [where];
+ [and];
 
 #create
 insert into slurm_bgpsec (

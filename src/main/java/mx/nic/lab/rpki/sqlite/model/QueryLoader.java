@@ -23,11 +23,15 @@ public class QueryLoader {
 	private static void loadModelsQueries(String schema) {
 		GbrModel.loadQueryGroup(schema);
 		RoaModel.loadQueryGroup(schema);
+		RpkiObjectModel.loadQueryGroup(schema);
+		RpkiRepositoryModel.loadQueryGroup(schema);
 		RtrSessionModel.loadQueryGroup(schema);
 		SlurmBgpsecModel.loadQueryGroup(schema);
 		SlurmPrefixModel.loadQueryGroup(schema);
-		TalModel.loadQueryGroup(schema);
 		TalFileModel.loadQueryGroup(schema);
+		TalModel.loadQueryGroup(schema);
 		TalUriModel.loadQueryGroup(schema);
+		ValidationCheckModel.loadQueryGroup(schema);
+		ValidationRunModel.loadQueryGroup(schema);
 	}
 }

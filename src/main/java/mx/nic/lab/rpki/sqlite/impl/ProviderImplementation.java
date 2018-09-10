@@ -2,16 +2,18 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.util.Properties;
 
-import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.exception.InitializationException;
 import mx.nic.lab.rpki.db.spi.DataAccessImplementation;
 import mx.nic.lab.rpki.db.spi.RoaDAO;
 import mx.nic.lab.rpki.db.spi.RouteValidationDAO;
+import mx.nic.lab.rpki.db.spi.RpkiObjectDAO;
+import mx.nic.lab.rpki.db.spi.RpkiRepositoryDAO;
 import mx.nic.lab.rpki.db.spi.RtrSessionDAO;
 import mx.nic.lab.rpki.db.spi.SlurmBgpsecDAO;
 import mx.nic.lab.rpki.db.spi.SlurmDAO;
 import mx.nic.lab.rpki.db.spi.SlurmPrefixDAO;
 import mx.nic.lab.rpki.db.spi.TalDAO;
+import mx.nic.lab.rpki.db.spi.ValidationRunDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
 import mx.nic.lab.rpki.sqlite.model.QueryLoader;
 
@@ -28,38 +30,53 @@ public class ProviderImplementation implements DataAccessImplementation {
 	}
 
 	@Override
-	public TalDAO getTalDAO() throws ApiDataAccessException {
+	public TalDAO getTalDAO() {
 		return new TalDAOImpl();
 	}
 
 	@Override
-	public RoaDAO getRoaDAO() throws ApiDataAccessException {
+	public RoaDAO getRoaDAO() {
 		return new RoaDAOImpl();
 	}
 
 	@Override
-	public SlurmPrefixDAO getSlurmPrefixDAO() throws ApiDataAccessException {
+	public SlurmPrefixDAO getSlurmPrefixDAO() {
 		return new SlurmPrefixDAOImpl();
 	}
 
 	@Override
-	public SlurmBgpsecDAO getSlurmBgpsecDAO() throws ApiDataAccessException {
+	public SlurmBgpsecDAO getSlurmBgpsecDAO() {
 		return new SlurmBgpsecDAOImpl();
 	}
 
 	@Override
-	public SlurmDAO getSlurmDAO() throws ApiDataAccessException {
+	public SlurmDAO getSlurmDAO() {
 		return new SlurmDAOImpl();
 	}
 
 	@Override
-	public RtrSessionDAO getRtrSessionDAO() throws ApiDataAccessException {
+	public RtrSessionDAO getRtrSessionDAO() {
 		return new RtrSessionDAOImpl();
 	}
 
 	@Override
-	public RouteValidationDAO getRouteValidationDAO() throws ApiDataAccessException {
+	public RouteValidationDAO getRouteValidationDAO() {
 		return new RouteValidationDAOImpl();
+	}
+
+	@Override
+	public RpkiObjectDAO getRpkiObjectDAO() {
+		return new RpkiObjectDAOImpl();
+	}
+
+	@Override
+	public RpkiRepositoryDAO getRpkiRepositoryDAO() {
+		return new RpkiRepositoryDAOImpl();
+	}
+
+	@Override
+	public ValidationRunDAO getValidationRunDAO() {
+		return new ValidationRunDAOImpl();
 	}
 
 }

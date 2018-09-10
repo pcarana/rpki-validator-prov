@@ -6,11 +6,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import mx.nic.lab.rpki.db.pojo.Gbr;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Roa;
 import mx.nic.lab.rpki.sqlite.database.QueryGroup;
@@ -34,11 +34,15 @@ public class RoaModel {
 
 	// Queries IDs used by this model
 	private static final String GET_BY_ID = "getById";
+	private static final String GET_BY_RPKI_OBJECT_ID = "getByRpkiObjectId";
 	private static final String GET_ALL = "getAll";
 	private static final String FIND_EXACT_MATCH = "findExactMatch";
 	private static final String FIND_COVERING_AGGREGATE = "findCoveringAggregate";
 	private static final String FIND_MORE_SPECIFIC = "findMoreSpecific";
 	private static final String EXIST_ASN = "existAsn";
+	private static final String GET_LAST_ID = "getLastId";
+	private static final String CREATE = "create";
+	private static final String CREATE_GBR_RELATION = "createGbrRelation";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -72,7 +76,7 @@ public class RoaModel {
 			if (!rs.next()) {
 				return null;
 			}
-			Roa roa = null;
+			RoaDbObject roa = null;
 			do {
 				roa = new RoaDbObject(rs);
 				loadRelatedObjects(roa, connection);
@@ -96,16 +100,12 @@ public class RoaModel {
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			if (!rs.next()) {
-				return Collections.emptyList();
-			}
 			List<Roa> roas = new ArrayList<Roa>();
-			do {
+			while (rs.next()) {
 				RoaDbObject roa = new RoaDbObject(rs);
 				loadRelatedObjects(roa, connection);
 				roas.add(roa);
-			} while (rs.next());
-
+			}
 			return roas;
 		}
 	}
@@ -131,7 +131,7 @@ public class RoaModel {
 			if (!rs.next()) {
 				return null;
 			}
-			Roa roa = null;
+			RoaDbObject roa = null;
 			do {
 				roa = new RoaDbObject(rs);
 				loadRelatedObjects(roa, connection);
@@ -163,15 +163,12 @@ public class RoaModel {
 			statement.setInt(2, prefixLength);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			if (!rs.next()) {
-				return Collections.emptyList();
-			}
 			List<Roa> roas = new ArrayList<Roa>();
-			do {
+			while (rs.next()) {
 				RoaDbObject roa = new RoaDbObject(rs);
 				loadRelatedObjects(roa, connection);
 				roas.add(roa);
-			} while (rs.next());
+			}
 
 			return roas;
 		}
@@ -199,15 +196,12 @@ public class RoaModel {
 			statement.setInt(2, prefixLength);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			if (!rs.next()) {
-				return Collections.emptyList();
-			}
 			List<Roa> roas = new ArrayList<Roa>();
-			do {
+			while (rs.next()) {
 				RoaDbObject roa = new RoaDbObject(rs);
 				loadRelatedObjects(roa, connection);
 				roas.add(roa);
-			} while (rs.next());
+			}
 
 			return roas;
 		}
@@ -232,15 +226,119 @@ public class RoaModel {
 	}
 
 	/**
+	 * Creates a new {@link Roa} returns null if the object couldn't be created.
+	 * 
+	 * @param newRoa
+	 * @param connection
+	 * @return The ID of the {@link Roa} created
+	 * @throws SQLException
+	 */
+	public static Long create(Roa newRoa, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(CREATE);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			Long newId = getLastId(connection) + 1;
+			newRoa.setId(newId);
+			RoaDbObject stored = new RoaDbObject(newRoa);
+			stored.storeToDatabase(statement);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			int created = statement.executeUpdate();
+			if (created < 1) {
+				return null;
+			}
+			storeRelatedObjects(newRoa, connection);
+			return newId;
+		}
+	}
+
+	/**
+	 * Get the last registered ID
+	 * 
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static Long getLastId(Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_LAST_ID);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			ResultSet rs = statement.executeQuery();
+			// First in the table
+			if (!rs.next()) {
+				return 0L;
+			}
+			return rs.getLong(1);
+		}
+	}
+
+	/**
+	 * Get all the {@link Roa}s related to a RPKI OBJECT ID, return empty list when
+	 * no files are found
+	 * 
+	 * @param rpkiObjectId
+	 * @param connection
+	 * @return The list of {@link Roa}s related, or empty list when no data is found
+	 * @throws SQLException
+	 */
+	public static List<Roa> getByRpkiObjectId(Long rpkiObjectId, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_BY_RPKI_OBJECT_ID);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setLong(1, rpkiObjectId);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			ResultSet rs = statement.executeQuery();
+			List<Roa> roas = new ArrayList<Roa>();
+			while (rs.next()) {
+				RoaDbObject talFile = new RoaDbObject(rs);
+				roas.add(talFile);
+			}
+			return roas;
+		}
+	}
+
+	/**
 	 * Load all the related objects to the ROA
 	 * 
 	 * @param roa
 	 * @param connection
 	 * @throws SQLException
 	 */
-	private static void loadRelatedObjects(Roa roa, Connection connection) throws SQLException {
+	private static void loadRelatedObjects(RoaDbObject roa, Connection connection) throws SQLException {
+		roa.setRpkiObject(RpkiObjectModel.getById(roa.getRpkiObjectId(), connection));
 		Long roaId = roa.getId();
 		roa.setGbrs(GbrModel.getByRoaId(roaId, connection));
+	}
+
+	/**
+	 * Store the related objects to the ROA
+	 * 
+	 * @param roa
+	 * @param connection
+	 * @throws SQLException
+	 */
+	private static void storeRelatedObjects(Roa roa, Connection connection) throws SQLException {
+		for (Gbr gbr : roa.getGbrs()) {
+			// TODO This assumes that the GBRs already exists, is this correct?
+			createGbrRelation(roa.getId(), gbr.getId(), connection);
+		}
+	}
+
+	/**
+	 * Creates a {@link Roa} relation with a {@link Gbr} based on the IDs of both of
+	 * them
+	 * 
+	 * @param roaId
+	 * @param gbrId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static boolean createGbrRelation(Long roaId, Long gbrId, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(CREATE_GBR_RELATION);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setLong(1, roaId);
+			statement.setLong(2, gbrId);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			int created = statement.executeUpdate();
+			return created > 0;
+		}
 	}
 
 	public static QueryGroup getQueryGroup() {

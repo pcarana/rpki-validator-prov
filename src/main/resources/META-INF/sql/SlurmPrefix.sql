@@ -48,7 +48,7 @@ select max(slp_id)
 select 1
   from slurm_prefix
  where slp_type = ?
- [where];
+ [and];
 
 #create
 insert into slurm_prefix (

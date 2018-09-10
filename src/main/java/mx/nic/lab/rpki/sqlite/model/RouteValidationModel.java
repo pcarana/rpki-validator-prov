@@ -31,6 +31,7 @@ public class RouteValidationModel {
 	 */
 	public static RouteValidation validate(Long asn, byte[] prefix, Integer prefixLength, Connection connection)
 			throws SQLException {
+		// FIXME Consider SLURM
 		// Go for the exact match
 		Roa matchedRoa = RoaModel.findExactMatch(prefix, prefixLength, connection);
 		if (matchedRoa != null) {

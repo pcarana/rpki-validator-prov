@@ -3,6 +3,7 @@ package mx.nic.lab.rpki.sqlite.object;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,6 +16,7 @@ import mx.nic.lab.rpki.db.pojo.Roa;
  */
 public class RoaDbObject extends Roa implements DatabaseObject {
 
+	public static final String RPKI_OBJECT_COLUMN = "rpo_id";
 	public static final String ID_COLUMN = "roa_id";
 	public static final String ASN_COLUMN = "roa_asn";
 	public static final String PREFIX_TEXT_COLUMN = "roa_prefix_text";
@@ -22,8 +24,9 @@ public class RoaDbObject extends Roa implements DatabaseObject {
 	public static final String END_PREFIX_COLUMN = "roa_end_prefix";
 	public static final String PREFIX_LENGTH_COLUMN = "roa_prefix_length";
 	public static final String PREFIX_MAX_LENGTH_COLUMN = "roa_prefix_max_length";
-	public static final String CMS_DATA_COLUMN = "roa_cms_data";
-	public static final String TAL_ID_COLUMN = "tal_id";
+	public static final String PREFIX_FAMILY_COLUMN = "roa_prefix_family";
+
+	private Long rpkiObjectId;
 
 	/**
 	 * Mapping of the {@link Roa} properties to its corresponding DB column
@@ -31,6 +34,7 @@ public class RoaDbObject extends Roa implements DatabaseObject {
 	public static final Map<String, String> propertyToColumnMap;
 	static {
 		propertyToColumnMap = new HashMap<>();
+		propertyToColumnMap.put(RPKI_OBJECT, RPKI_OBJECT_COLUMN);
 		propertyToColumnMap.put(ID, ID_COLUMN);
 		propertyToColumnMap.put(ASN, ASN_COLUMN);
 		propertyToColumnMap.put(PREFIX_TEXT, PREFIX_TEXT_COLUMN);
@@ -38,12 +42,26 @@ public class RoaDbObject extends Roa implements DatabaseObject {
 		propertyToColumnMap.put(END_PREFIX, END_PREFIX_COLUMN);
 		propertyToColumnMap.put(PREFIX_LENGTH, PREFIX_LENGTH_COLUMN);
 		propertyToColumnMap.put(PREFIX_MAX_LENGTH, PREFIX_MAX_LENGTH_COLUMN);
-		propertyToColumnMap.put(CMS_DATA, CMS_DATA_COLUMN);
-		propertyToColumnMap.put(TAL_ID, TAL_ID_COLUMN);
+		propertyToColumnMap.put(PREFIX_FAMILY, PREFIX_FAMILY_COLUMN);
 	}
 
 	public RoaDbObject() {
 		super();
+	}
+
+	public RoaDbObject(Roa roa) {
+		this.setRpkiObject(roa.getRpkiObject());
+		this.setId(roa.getId());
+		this.setAsn(roa.getAsn());
+		this.setPrefixText(roa.getPrefixText());
+		this.setStartPrefix(roa.getStartPrefix());
+		this.setEndPrefix(roa.getEndPrefix());
+		this.setPrefixLength(roa.getPrefixLength());
+		this.setPrefixMaxLength(roa.getPrefixMaxLength());
+		this.setPrefixFamily(roa.getPrefixFamily());
+		if (getRpkiObject() != null) {
+			this.setRpkiObjectId(getRpkiObject().getId());
+		}
 	}
 
 	/**
@@ -59,6 +77,7 @@ public class RoaDbObject extends Roa implements DatabaseObject {
 
 	@Override
 	public void loadFromDatabase(ResultSet resultSet) throws SQLException {
+		setRpkiObjectId(resultSet.getLong(RPKI_OBJECT_COLUMN));
 		setId(resultSet.getLong(ID_COLUMN));
 		if (resultSet.wasNull()) {
 			setId(null);
@@ -84,23 +103,63 @@ public class RoaDbObject extends Roa implements DatabaseObject {
 		if (resultSet.wasNull()) {
 			setPrefixMaxLength(null);
 		}
-		setCmsData(resultSet.getBytes(CMS_DATA_COLUMN));
+		setPrefixFamily(resultSet.getInt(PREFIX_FAMILY_COLUMN));
 		if (resultSet.wasNull()) {
-			setCmsData(null);
-		}
-		setTalId(resultSet.getLong(TAL_ID_COLUMN));
-		if (resultSet.wasNull()) {
-			setTalId(null);
+			setPrefixFamily(null);
 		}
 	}
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		// This object can't be stored to database
+		statement.setLong(1, getRpkiObjectId());
+		statement.setLong(2, getId());
+		if (getAsn() != null) {
+			statement.setLong(3, getAsn());
+		} else {
+			statement.setNull(3, Types.NUMERIC);
+		}
+		if (getPrefixText() != null) {
+			statement.setString(4, getPrefixText());
+		} else {
+			statement.setNull(4, Types.VARCHAR);
+		}
+		if (getStartPrefix() != null) {
+			statement.setBytes(5, getStartPrefix());
+		} else {
+			statement.setNull(5, Types.BLOB);
+		}
+		if (getEndPrefix() != null) {
+			statement.setBytes(6, getEndPrefix());
+		} else {
+			statement.setNull(6, Types.BLOB);
+		}
+		if (getPrefixLength() != null) {
+			statement.setInt(7, getPrefixLength());
+		} else {
+			statement.setNull(7, Types.INTEGER);
+		}
+		if (getPrefixMaxLength() != null) {
+			statement.setInt(8, getPrefixMaxLength());
+		} else {
+			statement.setNull(8, Types.INTEGER);
+		}
+		if (getPrefixFamily() != null) {
+			statement.setInt(9, getPrefixFamily());
+		} else {
+			statement.setNull(9, Types.INTEGER);
+		}
 	}
 
 	@Override
 	public void validate(Operation operation) throws ValidationException {
 		// No special validations for now
+	}
+
+	public Long getRpkiObjectId() {
+		return rpkiObjectId;
+	}
+
+	public void setRpkiObjectId(Long rpkiObjectId) {
+		this.rpkiObjectId = rpkiObjectId;
 	}
 }

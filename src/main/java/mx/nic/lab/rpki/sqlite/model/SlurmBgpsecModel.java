@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -96,14 +95,11 @@ public class SlurmBgpsecModel {
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			if (!rs.next()) {
-				return Collections.emptyList();
-			}
 			List<SlurmBgpsec> slurmBgpsecs = new ArrayList<SlurmBgpsec>();
-			do {
+			while (rs.next()) {
 				SlurmBgpsecDbObject slurmBgpsec = new SlurmBgpsecDbObject(rs);
 				slurmBgpsecs.add(slurmBgpsec);
-			} while (rs.next());
+			}
 
 			return slurmBgpsecs;
 		}
@@ -127,14 +123,11 @@ public class SlurmBgpsecModel {
 			statement.setInt(1, type);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			if (!rs.next()) {
-				return Collections.emptyList();
-			}
 			List<SlurmBgpsec> slurmBgpsecs = new ArrayList<SlurmBgpsec>();
-			do {
+			while (rs.next()) {
 				SlurmBgpsecDbObject slurmBgpsec = new SlurmBgpsecDbObject(rs);
 				slurmBgpsecs.add(slurmBgpsec);
-			} while (rs.next());
+			}
 
 			return slurmBgpsecs;
 		}
@@ -168,7 +161,7 @@ public class SlurmBgpsecModel {
 			parameters.append(" and ").append(SlurmBgpsecDbObject.ROUTER_PUBLIC_KEY_COLUMN).append(" = ? ");
 			publicKeyIdx = currentIdx++;
 		}
-		query = query.replace("[where]", parameters.toString());
+		query = query.replace("[and]", parameters.toString());
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			statement.setInt(1, slurmBgpsec.getType());
 			if (asnIdx > 0) {

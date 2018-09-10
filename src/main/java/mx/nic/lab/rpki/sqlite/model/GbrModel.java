@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,18 +64,18 @@ public class GbrModel {
 			statement.setLong(1, roaId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			if (!rs.next()) {
-				return Collections.emptyList();
-			}
 			List<Gbr> gbrs = new ArrayList<Gbr>();
-			do {
+			while (rs.next()) {
 				GbrDbObject gbr = new GbrDbObject(rs);
+				gbr.setRpkiObject(RpkiObjectModel.getById(gbr.getRpkiObjectId(), connection));
 				gbrs.add(gbr);
-			} while (rs.next());
+			}
 
 			return gbrs;
 		}
 	}
+
+	// TODO Add create/delete methods
 
 	public static QueryGroup getQueryGroup() {
 		return queryGroup;

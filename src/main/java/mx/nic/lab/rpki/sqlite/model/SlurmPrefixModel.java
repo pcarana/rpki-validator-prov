@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -96,14 +95,11 @@ public class SlurmPrefixModel {
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			if (!rs.next()) {
-				return Collections.emptyList();
-			}
 			List<SlurmPrefix> slurmPrefixes = new ArrayList<SlurmPrefix>();
-			do {
+			while (rs.next()) {
 				SlurmPrefixDbObject slurmPrefix = new SlurmPrefixDbObject(rs);
 				slurmPrefixes.add(slurmPrefix);
-			} while (rs.next());
+			}
 
 			return slurmPrefixes;
 		}
@@ -127,14 +123,11 @@ public class SlurmPrefixModel {
 			statement.setInt(1, type);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			if (!rs.next()) {
-				return Collections.emptyList();
-			}
 			List<SlurmPrefix> slurmPrefixes = new ArrayList<SlurmPrefix>();
-			do {
+			while (rs.next()) {
 				SlurmPrefixDbObject slurmPrefix = new SlurmPrefixDbObject(rs);
 				slurmPrefixes.add(slurmPrefix);
-			} while (rs.next());
+			}
 
 			return slurmPrefixes;
 		}
@@ -173,7 +166,7 @@ public class SlurmPrefixModel {
 			parameters.append(" and ").append(SlurmPrefixDbObject.PREFIX_MAX_LENGTH_COLUMN).append(" = ? ");
 			prefixMaxLengthIdx = currentIdx++;
 		}
-		query = query.replace("[where]", parameters.toString());
+		query = query.replace("[and]", parameters.toString());
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			statement.setInt(1, slurmPrefix.getType());
 			if (asnIdx > 0) {

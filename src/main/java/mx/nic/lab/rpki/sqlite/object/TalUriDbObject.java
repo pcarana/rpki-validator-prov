@@ -3,6 +3,7 @@ package mx.nic.lab.rpki.sqlite.object;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.TalUri;
@@ -15,12 +16,16 @@ public class TalUriDbObject extends TalUri implements DatabaseObject {
 
 	public static final String ID_COLUMN = "tau_id";
 	public static final String TAL_ID_COLUMN = "tal_id";
-	public static final String VALUE_COLUMN = "tau_value";
-	public static final String LOADED_CER_COLUMN = "tau_loaded_cer";
-	public static final String LOADED_COLUMN = "tau_loaded";
+	public static final String LOCATION_COLUMN = "tau_location";
 
 	public TalUriDbObject() {
 		super();
+	}
+
+	public TalUriDbObject(TalUri talUri) {
+		this.setId(talUri.getId());
+		this.setTalId(talUri.getTalId());
+		this.setLocation(talUri.getLocation());
 	}
 
 	/**
@@ -44,20 +49,18 @@ public class TalUriDbObject extends TalUri implements DatabaseObject {
 		if (resultSet.wasNull()) {
 			setTalId(null);
 		}
-		setValue(resultSet.getString(VALUE_COLUMN));
-		setLoadedCer(resultSet.getBytes(LOADED_CER_COLUMN));
-		if (resultSet.wasNull()) {
-			setLoadedCer(null);
-		}
-		setLoaded(resultSet.getInt(LOADED_COLUMN) > 0);
-		if (resultSet.wasNull()) {
-			setId(null);
-		}
+		setLocation(resultSet.getString(LOCATION_COLUMN));
 	}
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		// This object can't be stored to database
+		statement.setLong(1, getId());
+		statement.setLong(2, getTalId());
+		if (getLocation() != null) {
+			statement.setString(3, getLocation());
+		} else {
+			statement.setNull(3, Types.VARCHAR);
+		}
 	}
 
 	@Override
