@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,11 +65,8 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
 		statement.setLong(1, getId());
-		if (getUpdatedAt() != null) {
-			statement.setString(2, getUpdatedAt().toString());
-		} else {
-			statement.setNull(2, Types.VARCHAR);
-		}
+		// updatedAt
+		statement.setString(2, Instant.now().toString());
 		if (getValidationRunId() != null) {
 			statement.setLong(3, getValidationRunId());
 		} else {

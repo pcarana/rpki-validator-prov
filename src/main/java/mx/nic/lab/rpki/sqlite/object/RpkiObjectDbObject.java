@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -94,11 +95,8 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
 		statement.setLong(1, getId());
-		if (getUpdatedAt() != null) {
-			statement.setString(2, getUpdatedAt().toString());
-		} else {
-			statement.setNull(2, Types.VARCHAR);
-		}
+		// updatedAt
+		statement.setString(2, Instant.now().toString());
 		if (getType() != null) {
 			statement.setString(3, getType().toString());
 		} else {

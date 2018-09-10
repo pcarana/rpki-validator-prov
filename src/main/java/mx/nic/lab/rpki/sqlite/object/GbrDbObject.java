@@ -49,6 +49,8 @@ public class GbrDbObject extends Gbr implements DatabaseObject {
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
 		// TODO This object should be stored to database
+		// updatedAt
+		// statement.setString(2, Instant.now().toString());
 	}
 
 	@Override
