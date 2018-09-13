@@ -423,7 +423,7 @@ public class RpkiObjectModel {
 		Long id = rpkiObject.getId();
 		rpkiObject.setEncodedRpkiObject(getEncodedByRpkiObjectId(id, connection));
 		rpkiObject.setLocations(getLocations(id, connection));
-		rpkiObject.setRoas(RoaModel.getByRpkiObjectId(id, connection));
+		// The ROAs aren't loaded
 	}
 
 	/**

@@ -61,3 +61,8 @@ select t.tal_id,
   from tal t
   join rpki_repository_trust_anchors r on r.tal_id = t.tal_id
  where r.rpr_id = ?;
+
+#updateLoadedCer
+update tal
+   set tal_loaded_cer = ?
+ where tal_id = ?;

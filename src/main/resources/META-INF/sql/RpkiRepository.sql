@@ -1,3 +1,12 @@
+#create
+insert into rpki_repository (
+       rpr_updated_at,
+       rpr_status,
+       rpr_last_downloaded_at,
+       rpr_location_uri,
+       rpr_parent_repository_id)
+values (?, ?, ?, ?, ?);
+
 #getById
 select rpr_id,
        rpr_updated_at,
@@ -39,3 +48,24 @@ select rpr_id,
   from rpki_repository
  [order]
  [limit];
+
+#getByUnique
+select rpr_id,
+       rpr_updated_at,
+       rpr_status,
+       rpr_last_downloaded_at,
+       rpr_location_uri,
+       rpr_parent_repository_id
+  from rpki_repository
+ where 1 = 1
+ [and]
+ order by rpr_id desc;
+
+#createTalRelation
+insert into rpki_repository_trust_anchors (rpr_id, tal_id)
+values (?, ?);
+
+#updateParentRepository
+update rpki_repository
+   set rpr_parent_repository_id = ?
+ where rpr_id = ?;

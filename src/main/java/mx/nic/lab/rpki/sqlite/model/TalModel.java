@@ -43,6 +43,7 @@ public class TalModel {
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
 	private static final String DELETE = "delete";
+	private static final String UPDATE_LOADED_CER = "updateLoadedCer";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -283,6 +284,24 @@ public class TalModel {
 		}
 	}
 
+	/**
+	 * Update a {@link Tal} loaded certificate
+	 * 
+	 * @param tal
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	public static int updateLoadedCertificate(Tal tal, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(UPDATE_LOADED_CER);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setBytes(1, tal.getLoadedCer());
+			statement.setLong(2, tal.getId());
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			return statement.executeUpdate();
+		}
+	}
+	
 	/**
 	 * Load all the related objects to the TAL
 	 * 

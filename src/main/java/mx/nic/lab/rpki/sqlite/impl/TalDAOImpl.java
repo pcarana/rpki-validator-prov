@@ -89,4 +89,19 @@ public class TalDAOImpl implements TalDAO {
 		}
 	}
 
+	@Override
+	public boolean updateLoadedCertificate(Tal tal) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			// Validate that the object exists
+			if (!TalModel.exist(tal, connection)) {
+				throw new ValidationException(
+						new ValidationError(Tal.OBJECT_NAME, ValidationErrorType.OBJECT_NOT_EXISTS));
+			}
+			int updated = TalModel.updateLoadedCertificate(tal, connection);
+			return updated > 0;
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
 }

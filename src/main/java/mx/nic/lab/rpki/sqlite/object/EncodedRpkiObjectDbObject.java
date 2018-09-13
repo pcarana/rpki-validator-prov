@@ -47,7 +47,7 @@ public class EncodedRpkiObjectDbObject extends EncodedRpkiObject implements Data
 			setId(null);
 		}
 		setRpkiObjectId(resultSet.getLong(RPKI_OBJECT_COLUMN));
-		setUpdatedAt(getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
+		setUpdatedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
 		setEncoded(resultSet.getBytes(ENCODED_COLUMN));
 		if (resultSet.wasNull()) {
 			setEncoded(null);

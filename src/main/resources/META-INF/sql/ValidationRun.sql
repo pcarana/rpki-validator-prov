@@ -3,28 +3,19 @@ select var_id,
        var_updated_at,
        var_completed_at,
        var_status,
+       var_type,
        tal_id,
        var_tal_certificate_uri
   from validation_run
   [order]
   [limit];
 
-#getLastId
-select max(var_id)
-  from validation_run;
-
-#exist
-select 1
-  from validation_run
- where 1 = 1
- [and];
-
 #create
 insert into validation_run (
-       var_id,
        var_updated_at,
        var_completed_at,
        var_status,
+       var_type,
        tal_id,
        var_tal_certificate_uri)
 values (?, ?, ?, ?, ?, ?);
@@ -41,3 +32,16 @@ values (?, ?);
 delete from validation_run
  where var_completed_at < ?
    and var_status != 'RUNNING';
+
+#getByUnique
+select var_id,
+       var_updated_at,
+       var_completed_at,
+       var_status,
+       var_type,
+       tal_id,
+       var_tal_certificate_uri
+  from validation_run
+ where 1 = 1
+ [and]
+ order by var_id desc;

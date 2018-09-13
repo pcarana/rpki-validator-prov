@@ -21,6 +21,7 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 	public static final String UPDATED_AT_COLUMN = "var_updated_at";
 	public static final String COMPLETED_AT_COLUMN = "var_completed_at";
 	public static final String STATUS_COLUMN = "var_status";
+	public static final String TYPE_COLUMN = "var_type";
 	public static final String TAL_COLUMN = "tal_id";
 	public static final String TAL_CERTIFICATE_URI_COLUMN = "var_tal_certificate_uri";
 
@@ -36,15 +37,17 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 		propertyToColumnMap.put(UPDATED_AT, UPDATED_AT_COLUMN);
 		propertyToColumnMap.put(COMPLETED_AT, COMPLETED_AT_COLUMN);
 		propertyToColumnMap.put(STATUS, STATUS_COLUMN);
+		propertyToColumnMap.put(TYPE, TYPE_COLUMN);
 		propertyToColumnMap.put(TAL, TAL_COLUMN);
 		propertyToColumnMap.put(TAL_CERTIFICATE_URI, TAL_CERTIFICATE_URI_COLUMN);
 	}
 
-	public ValidationRunDbObject() {
-		super();
+	public ValidationRunDbObject(Type type) {
+		super(type);
 	}
 
 	public ValidationRunDbObject(ValidationRun validationRun) {
+		super(validationRun.getType());
 		this.setId(validationRun.getId());
 		this.setUpdatedAt(validationRun.getUpdatedAt());
 		this.setCompletedAt(validationRun.getCompletedAt());
@@ -61,7 +64,7 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 	}
 
 	public ValidationRunDbObject(ResultSet resultSet) throws SQLException {
-		super();
+		super(DatabaseObject.getStringAsEnum(Type.class, resultSet.getString(TYPE_COLUMN)));
 		loadFromDatabase(resultSet);
 	}
 
@@ -71,9 +74,9 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 		if (resultSet.wasNull()) {
 			setId(null);
 		}
-		setUpdatedAt(getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
-		setCompletedAt(getStringDateAsInstant(resultSet.getString(COMPLETED_AT_COLUMN)));
-		setStatus(getStringAsEnum(Status.class, resultSet.getString(STATUS_COLUMN)));
+		setUpdatedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
+		setCompletedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(COMPLETED_AT_COLUMN)));
+		setStatus(DatabaseObject.getStringAsEnum(Status.class, resultSet.getString(STATUS_COLUMN)));
 		setTalId(resultSet.getLong(TAL_COLUMN));
 		if (resultSet.wasNull()) {
 			setTalId(null);
@@ -83,16 +86,20 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		statement.setLong(1, getId());
 		// updatedAt
-		statement.setString(2, Instant.now().toString());
+		statement.setString(1, Instant.now().toString());
 		if (getCompletedAt() != null) {
-			statement.setString(3, getCompletedAt().toString());
+			statement.setString(2, getCompletedAt().toString());
+		} else {
+			statement.setNull(2, Types.VARCHAR);
+		}
+		if (getStatus() != null) {
+			statement.setString(3, getStatus().toString());
 		} else {
 			statement.setNull(3, Types.VARCHAR);
 		}
-		if (getStatus() != null) {
-			statement.setString(4, getStatus().toString());
+		if (getType() != null) {
+			statement.setString(4, getType().toString());
 		} else {
 			statement.setNull(4, Types.VARCHAR);
 		}

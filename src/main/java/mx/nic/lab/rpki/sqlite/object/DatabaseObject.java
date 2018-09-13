@@ -37,7 +37,7 @@ public interface DatabaseObject {
 	 * @param stringDate
 	 * @return
 	 */
-	public default Instant getStringDateAsInstant(String stringDate) {
+	public static Instant getStringDateAsInstant(String stringDate) {
 		if (stringDate == null) {
 			return null;
 		}
@@ -58,7 +58,7 @@ public interface DatabaseObject {
 	 * @param value
 	 * @return
 	 */
-	public default <T extends Enum<T>> T getStringAsEnum(Class<T> enumClass, String value) {
+	public static <T extends Enum<T>> T getStringAsEnum(Class<T> enumClass, String value) {
 		if (value == null) {
 			return null;
 		}

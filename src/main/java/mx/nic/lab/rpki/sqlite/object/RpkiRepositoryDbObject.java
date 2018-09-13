@@ -68,9 +68,9 @@ public class RpkiRepositoryDbObject extends RpkiRepository implements DatabaseOb
 		if (resultSet.wasNull()) {
 			setId(null);
 		}
-		setUpdatedAt(getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
-		setStatus(getStringAsEnum(Status.class, resultSet.getString(STATUS_COLUMN)));
-		setLastDownloadedAt(getStringDateAsInstant(resultSet.getString(LAST_DOWNLOADED_AT_COLUMN)));
+		setUpdatedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
+		setStatus(DatabaseObject.getStringAsEnum(Status.class, resultSet.getString(STATUS_COLUMN)));
+		setLastDownloadedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(LAST_DOWNLOADED_AT_COLUMN)));
 		setLocationUri(resultSet.getString(LOCATION_URI_COLUMN));
 		setParentRepositoryId(resultSet.getLong(PARENT_REPOSITORY_COLUMN));
 		if (resultSet.wasNull()) {
@@ -80,28 +80,27 @@ public class RpkiRepositoryDbObject extends RpkiRepository implements DatabaseOb
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		statement.setLong(1, getId());
 		// updatedAt
-		statement.setString(2, Instant.now().toString());
+		statement.setString(1, Instant.now().toString());
 		if (getStatus() != null) {
-			statement.setString(3, getStatus().toString());
+			statement.setString(2, getStatus().toString());
+		} else {
+			statement.setNull(2, Types.VARCHAR);
+		}
+		if (getLastDownloadedAt() != null) {
+			statement.setString(3, getLastDownloadedAt().toString());
 		} else {
 			statement.setNull(3, Types.VARCHAR);
 		}
-		if (getLastDownloadedAt() != null) {
-			statement.setString(4, getLastDownloadedAt().toString());
+		if (getLocationUri() != null) {
+			statement.setString(4, getLocationUri());
 		} else {
 			statement.setNull(4, Types.VARCHAR);
 		}
-		if (getLocationUri() != null) {
-			statement.setString(5, getLocationUri());
-		} else {
-			statement.setNull(5, Types.VARCHAR);
-		}
 		if (getParentRepositoryId() != null) {
-			statement.setLong(6, getParentRepositoryId());
+			statement.setLong(5, getParentRepositoryId());
 		} else {
-			statement.setNull(6, Types.NUMERIC);
+			statement.setNull(5, Types.NUMERIC);
 		}
 	}
 

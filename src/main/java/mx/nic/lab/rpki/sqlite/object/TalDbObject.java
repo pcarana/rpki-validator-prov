@@ -22,6 +22,7 @@ public class TalDbObject extends Tal implements DatabaseObject {
 	public static final String SYNC_STATUS_COLUMN = "tal_sync_status";
 	public static final String VALIDATION_STATUS_COLUMN = "tal_validation_status";
 	public static final String NAME_COLUMN = "tal_name";
+	public static final String LOADED_CER_COLUMN = "tal_loaded_cer";
 
 	/**
 	 * Mapping of the {@link Tal} properties to its corresponding DB column
@@ -75,6 +76,7 @@ public class TalDbObject extends Tal implements DatabaseObject {
 		setSyncStatus(resultSet.getString(SYNC_STATUS_COLUMN));
 		setValidationStatus(resultSet.getString(VALIDATION_STATUS_COLUMN));
 		setName(resultSet.getString(NAME_COLUMN));
+		setLoadedCer(resultSet.getBytes(LOADED_CER_COLUMN));
 	}
 
 	@Override

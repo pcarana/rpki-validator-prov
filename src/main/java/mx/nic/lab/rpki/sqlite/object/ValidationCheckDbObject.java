@@ -52,13 +52,13 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 		if (resultSet.wasNull()) {
 			setId(null);
 		}
-		setUpdatedAt(getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
+		setUpdatedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
 		setValidationRunId(resultSet.getLong(VALIDATION_RUN_COLUMN));
 		if (resultSet.wasNull()) {
 			setValidationRunId(null);
 		}
 		setLocation(resultSet.getString(LOCATION_COLUMN));
-		setStatus(getStringAsEnum(Status.class, resultSet.getString(STATUS_COLUMN)));
+		setStatus(DatabaseObject.getStringAsEnum(Status.class, resultSet.getString(STATUS_COLUMN)));
 		setKey(resultSet.getString(KEY_COLUMN));
 	}
 

@@ -6,9 +6,6 @@ import java.time.Instant;
 import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
-import mx.nic.lab.rpki.db.exception.ValidationError;
-import mx.nic.lab.rpki.db.exception.ValidationErrorType;
-import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.ValidationRun;
 import mx.nic.lab.rpki.db.spi.ValidationRunDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
@@ -28,11 +25,6 @@ public class ValidationRunDAOImpl implements ValidationRunDAO {
 		validationRunDb.validate(Operation.CREATE);
 
 		try (Connection connection = DatabaseSession.getConnection()) {
-			// Validate that the object doesn't exists
-			if (ValidationRunModel.exist(validationRun, connection)) {
-				throw new ValidationException(
-						new ValidationError(ValidationRun.OBJECT_NAME, ValidationErrorType.OBJECT_EXISTS));
-			}
 			return ValidationRunModel.create(validationRun, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);

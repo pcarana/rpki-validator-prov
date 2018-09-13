@@ -1,5 +1,5 @@
 #getByRoaId
-select g.gbr_id, g.gbr_vcard, g.gbr_cms_data
+select g.gbr_id, g.gbr_vcard, g.rpo_id
   from gbr g
   join roa_gbr rg on rg.gbr_id = g.gbr_id
  where rg.roa_id = ?

@@ -169,7 +169,9 @@ public class ValidationCheckModel {
 		List<String> parameters = validationCheck.getParameters();
 		if (parameters != null) {
 			for (String parameter : parameters) {
-				createParameter(validationCheck.getId(), parameter, connection);
+				if (parameter != null && !parameter.trim().isEmpty()) {
+					createParameter(validationCheck.getId(), parameter.trim(), connection);
+				}
 			}
 		}
 	}

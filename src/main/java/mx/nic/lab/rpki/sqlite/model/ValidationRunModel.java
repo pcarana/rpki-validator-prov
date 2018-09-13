@@ -38,9 +38,8 @@ public class ValidationRunModel {
 
 	// Queries IDs used by this model
 	private static final String GET_BY_ID = "getById";
+	private static final String GET_BY_UNIQUE = "getByUnique";
 	private static final String GET_ALL = "getAll";
-	private static final String GET_LAST_ID = "getLastId";
-	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
 	private static final String CREATE_REPOSITORY_RELATION = "createRepositoryRelation";
 	private static final String CREATE_RPKI_OBJ_RELATION = "createValidObjectsRelation";
@@ -131,33 +130,6 @@ public class ValidationRunModel {
 	}
 
 	/**
-	 * Check if a {@link ValidationRun} already exists
-	 * 
-	 * @param validationRun
-	 * @param connection
-	 * @return <code>boolean</code> to indicate if the object exists
-	 * @throws SQLException
-	 */
-	public static boolean exist(ValidationRun validationRun, Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(EXIST);
-		StringBuilder parameters = new StringBuilder();
-		int currentIdx = 1;
-		int talIdIdx = -1;
-		if (validationRun.getTal() != null) {
-			parameters.append(" and ").append(ValidationRunDbObject.TAL_COLUMN).append(" = ? ");
-			talIdIdx = currentIdx++;
-		}
-		query = query.replace("[and]", parameters.toString());
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			if (talIdIdx > 0) {
-				statement.setLong(talIdIdx, validationRun.getTal().getId());
-			}
-			ResultSet rs = statement.executeQuery();
-			return rs.next();
-		}
-	}
-
-	/**
 	 * Creates a new {@link ValidationRun} returns null if the object couldn't be
 	 * created.
 	 * 
@@ -169,8 +141,6 @@ public class ValidationRunModel {
 	public static Long create(ValidationRun newValidationRun, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			Long newId = getLastId(connection) + 1;
-			newValidationRun.setId(newId);
 			ValidationRunDbObject stored = new ValidationRunDbObject(newValidationRun);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
@@ -178,27 +148,10 @@ public class ValidationRunModel {
 			if (created < 1) {
 				return null;
 			}
+			stored = getByUniqueFields(stored, connection);
+			newValidationRun.setId(stored.getId());
 			storeRelatedObjects(newValidationRun, connection);
-			return newId;
-		}
-	}
-
-	/**
-	 * Get the last registered ID
-	 * 
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static Long getLastId(Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(GET_LAST_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			ResultSet rs = statement.executeQuery();
-			// First in the table
-			if (!rs.next()) {
-				return 0L;
-			}
-			return rs.getLong(1);
+			return newValidationRun.getId();
 		}
 	}
 
@@ -211,7 +164,9 @@ public class ValidationRunModel {
 	 */
 	private static void loadRelatedObjects(ValidationRunDbObject validationRun, Connection connection)
 			throws SQLException {
-		validationRun.setTal(TalModel.getById(validationRun.getTalId(), connection));
+		if (validationRun.getTalId() != null) {
+			validationRun.setTal(TalModel.getById(validationRun.getTalId(), connection));
+		}
 		validationRun.setRpkiRepositories(RpkiRepositoryModel.getByValidationRunId(validationRun.getId(), connection));
 		validationRun
 				.setValidatedObjects(RpkiObjectModel.getValidatedByValidationRunId(validationRun.getId(), connection));
@@ -228,7 +183,6 @@ public class ValidationRunModel {
 	private static void storeRelatedObjects(ValidationRun validationRun, Connection connection) throws SQLException {
 		// FIXME @pcarana What to do with validationRun.getRpkiObjects()
 		// validationRun.getRpkiObjects()
-		validationRun.getRpkiRepositories();
 		Set<RpkiRepository> rpkiRepositories = validationRun.getRpkiRepositories();
 		if (rpkiRepositories != null) {
 			for (RpkiRepository rpkiRepository : rpkiRepositories) {
@@ -295,6 +249,69 @@ public class ValidationRunModel {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			int created = statement.executeUpdate();
 			return created > 0;
+		}
+	}
+
+	/**
+	 * Return a {@link PreparedStatement} that contains the necessary parameters to
+	 * make a search of a unique {@link ValidationRun} based on properties distinct
+	 * that the ID
+	 * 
+	 * @param validationRun
+	 * @param queryId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static PreparedStatement prepareUniqueSearch(ValidationRun validationRun, String queryId,
+			Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(queryId);
+		StringBuilder parameters = new StringBuilder();
+		int currentIdx = 1;
+		int talIdIdx = -1;
+		int typeIdx = -1;
+		int statusIdx = -1;
+		if (validationRun.getTal() != null) {
+			parameters.append(" and ").append(ValidationRunDbObject.TAL_COLUMN).append(" = ? ");
+			talIdIdx = currentIdx++;
+		}
+		if (validationRun.getType() != null) {
+			parameters.append(" and ").append(ValidationRunDbObject.TYPE_COLUMN).append(" = ? ");
+			typeIdx = currentIdx++;
+		}
+		if (validationRun.getStatus() != null) {
+			parameters.append(" and ").append(ValidationRunDbObject.STATUS_COLUMN).append(" = ? ");
+			statusIdx = currentIdx++;
+		}
+		query = query.replace("[and]", parameters.toString());
+		PreparedStatement statement = connection.prepareStatement(query);
+		if (talIdIdx > 0) {
+			statement.setLong(talIdIdx, validationRun.getTal().getId());
+		}
+		if (typeIdx > 0) {
+			statement.setString(typeIdx, validationRun.getType().toString());
+		}
+		if (statusIdx > 0) {
+			statement.setString(statusIdx, validationRun.getStatus().toString());
+		}
+		return statement;
+	}
+
+	/**
+	 * Get a {@link ValidationRun} by its unique fields
+	 * 
+	 * @param validationRun
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static ValidationRunDbObject getByUniqueFields(ValidationRun validationRun, Connection connection)
+			throws SQLException {
+		try (PreparedStatement statement = prepareUniqueSearch(validationRun, GET_BY_UNIQUE, connection)) {
+			ResultSet resultSet = statement.executeQuery();
+			ValidationRunDbObject found = new ValidationRunDbObject(resultSet);
+			loadRelatedObjects(found, connection);
+			return found;
 		}
 	}
 

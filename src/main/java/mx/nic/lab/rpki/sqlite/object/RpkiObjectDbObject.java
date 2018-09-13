@@ -72,16 +72,17 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 		if (resultSet.wasNull()) {
 			setId(null);
 		}
-		setUpdatedAt(getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
-		setType(getStringAsEnum(Type.class, resultSet.getString(TYPE_COLUMN)));
+		setUpdatedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
+		setType(DatabaseObject.getStringAsEnum(Type.class, resultSet.getString(TYPE_COLUMN)));
 		tempBytes = resultSet.getBytes(SERIAL_NUMBER_COLUMN);
 		if (resultSet.wasNull()) {
 			setSerialNumber(null);
 		} else {
 			setSerialNumber(new BigInteger(tempBytes));
 		}
-		setSigningTime(getStringDateAsInstant(resultSet.getString(SIGNING_TIME_COLUMN)));
-		setLastMarkedReachableAt(getStringDateAsInstant(resultSet.getString(LAST_MARK_REACHABLE_AT_COLUMN)));
+		setSigningTime(DatabaseObject.getStringDateAsInstant(resultSet.getString(SIGNING_TIME_COLUMN)));
+		setLastMarkedReachableAt(
+				DatabaseObject.getStringDateAsInstant(resultSet.getString(LAST_MARK_REACHABLE_AT_COLUMN)));
 		setAuthorityKeyIdentifier(resultSet.getBytes(AUTHORITY_KEY_IDENTIFIER_COLUMN));
 		if (resultSet.wasNull()) {
 			setAuthorityKeyIdentifier(null);

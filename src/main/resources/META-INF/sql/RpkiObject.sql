@@ -21,6 +21,7 @@ select rpo_locations
 #getEncodedByRpkiObjectId
 select ero_id,
        ero_updated_at,
+       rpo_id,
        ero_encoded
   from encoded_rpki_object
  where rpo_id = ?;
@@ -36,7 +37,7 @@ select r.rpo_id,
        r.rpo_sha256
   from rpki_object r
   join validation_run_validated_objects v on v.rpo_id = r.rpo_id
- where r.var_id = ?;
+ where v.var_id = ?;
 
 #getLastId
 select max(rpo_id)
