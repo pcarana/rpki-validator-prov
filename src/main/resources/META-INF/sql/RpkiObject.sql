@@ -6,7 +6,9 @@ select rpo_id,
        rpo_signing_time,
        rpo_last_marked_reachable_at,
        rpo_authority_key_identifier,
-       rpo_sha256
+       rpo_subject_key_identifier,
+       rpo_sha256,
+       rpo_is_ca
   from rpki_object
  where 1 = 1
  [and]
@@ -34,7 +36,9 @@ select r.rpo_id,
        r.rpo_signing_time,
        r.rpo_last_marked_reachable_at,
        r.rpo_authority_key_identifier,
-       r.rpo_sha256
+       r.rpo_subject_key_identifier,
+       r.rpo_sha256,
+       r.rpo_is_ca
   from rpki_object r
   join validation_run_validated_objects v on v.rpo_id = r.rpo_id
  where v.var_id = ?;
@@ -58,8 +62,10 @@ insert into rpki_object (
        rpo_signing_time,
        rpo_last_marked_reachable_at,
        rpo_authority_key_identifier,
-       rpo_sha256)
-values (?, ?, ?, ?, ?, ?, ?, ?);
+       rpo_subject_key_identifier,
+       rpo_sha256,
+       rpo_is_ca)
+values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 #delete
 delete from rpki_object where rpo_id = ?;

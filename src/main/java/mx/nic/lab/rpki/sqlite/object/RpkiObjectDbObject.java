@@ -24,7 +24,9 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 	public static final String SIGNING_TIME_COLUMN = "rpo_signing_time";
 	public static final String LAST_MARK_REACHABLE_AT_COLUMN = "rpo_last_marked_reachable_at";
 	public static final String AUTHORITY_KEY_IDENTIFIER_COLUMN = "rpo_authority_key_identifier";
+	public static final String SUBJECT_KEY_IDENTIFIER_COLUMN = "rpo_subject_key_identifier";
 	public static final String SHA256_COLUMN = "rpo_sha256";
+	public static final String IS_CA_COLUMN = "rpo_is_ca";
 
 	/**
 	 * Mapping of the {@link RpkiObject} properties to its corresponding DB column
@@ -39,7 +41,9 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 		propertyToColumnMap.put(SIGNING_TIME, SIGNING_TIME_COLUMN);
 		propertyToColumnMap.put(LAST_MARK_REACHABLE_AT, LAST_MARK_REACHABLE_AT_COLUMN);
 		propertyToColumnMap.put(AUTHORITY_KEY_IDENTIFIER, AUTHORITY_KEY_IDENTIFIER_COLUMN);
+		propertyToColumnMap.put(SUBJECT_KEY_IDENTIFIER, SUBJECT_KEY_IDENTIFIER_COLUMN);
 		propertyToColumnMap.put(SHA256, SHA256_COLUMN);
+		propertyToColumnMap.put(IS_CA, IS_CA_COLUMN);
 	}
 
 	public RpkiObjectDbObject() {
@@ -54,10 +58,13 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 		this.setSigningTime(rpkiObject.getSigningTime());
 		this.setLastMarkedReachableAt(rpkiObject.getLastMarkedReachableAt());
 		this.setAuthorityKeyIdentifier(rpkiObject.getAuthorityKeyIdentifier());
+		this.setSubjectKeyIdentifier(rpkiObject.getSubjectKeyIdentifier());
 		this.setSha256(rpkiObject.getSha256());
+		this.setIsCa(rpkiObject.isCa());
 		this.setEncodedRpkiObject(rpkiObject.getEncodedRpkiObject());
 		this.setLocations(rpkiObject.getLocations());
 		this.setRoas(rpkiObject.getRoas());
+		this.setGbr(rpkiObject.getGbr());
 	}
 
 	public RpkiObjectDbObject(ResultSet resultSet) throws SQLException {
@@ -87,10 +94,15 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 		if (resultSet.wasNull()) {
 			setAuthorityKeyIdentifier(null);
 		}
+		setSubjectKeyIdentifier(resultSet.getBytes(SUBJECT_KEY_IDENTIFIER_COLUMN));
+		if (resultSet.wasNull()) {
+			setSubjectKeyIdentifier(null);
+		}
 		setSha256(resultSet.getBytes(SHA256_COLUMN));
 		if (resultSet.wasNull()) {
 			setSha256(null);
 		}
+		setIsCa(resultSet.getBoolean(IS_CA_COLUMN));
 	}
 
 	@Override
@@ -123,11 +135,17 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 		} else {
 			statement.setNull(7, Types.BLOB);
 		}
-		if (getSha256() != null) {
-			statement.setBytes(8, getSha256());
+		if (getSubjectKeyIdentifier() != null) {
+			statement.setBytes(8, getSubjectKeyIdentifier());
 		} else {
 			statement.setNull(8, Types.BLOB);
 		}
+		if (getSha256() != null) {
+			statement.setBytes(9, getSha256());
+		} else {
+			statement.setNull(9, Types.BLOB);
+		}
+		statement.setBoolean(10, isCa());
 	}
 
 	@Override

@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.EncodedRpkiObject;
+import mx.nic.lab.rpki.db.pojo.Gbr;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Roa;
 import mx.nic.lab.rpki.db.pojo.RpkiObject;
@@ -229,6 +230,35 @@ public class RpkiObjectModel {
 	}
 
 	/**
+	 * Get a {@link RpkiObject} by its SubjectKeyIdentifier, return null if the
+	 * object isn't found
+	 * 
+	 * @param subjectKeyIdentifier
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	public static RpkiObject getBySubjectKeyIdentifier(byte[] subjectKeyIdentifier, Connection connection)
+			throws SQLException {
+		String query = getQueryGroup().getQuery(GET_BY);
+		StringBuilder parameters = new StringBuilder();
+		parameters.append(" and ").append(RpkiObjectDbObject.SUBJECT_KEY_IDENTIFIER_COLUMN).append(" = ? ");
+		query = query.replace("[and]", parameters.toString());
+		query = Util.getQueryWithPaging(query, null, null);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setBytes(1, subjectKeyIdentifier);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			ResultSet rs = statement.executeQuery();
+			if (!rs.next()) {
+				return null;
+			}
+			RpkiObjectDbObject rpkiObject = new RpkiObjectDbObject(rs);
+			loadRelatedObjects(rpkiObject, connection);
+			return rpkiObject;
+		}
+	}
+
+	/**
 	 * Check if a {@link RpkiObject} already exists
 	 * 
 	 * @param rpkiObject
@@ -410,6 +440,12 @@ public class RpkiObjectModel {
 		while (it.hasNext()) {
 			createLocation(rpkiObject.getId(), it.next(), connection);
 		}
+		// Ghostbuster Record
+		if (rpkiObject.getGbr() != null) {
+			Gbr gbr = rpkiObject.getGbr();
+			gbr.setRpkiObject(rpkiObject);
+			GbrModel.create(gbr, connection);
+		}
 	}
 
 	/**
@@ -423,7 +459,7 @@ public class RpkiObjectModel {
 		Long id = rpkiObject.getId();
 		rpkiObject.setEncodedRpkiObject(getEncodedByRpkiObjectId(id, connection));
 		rpkiObject.setLocations(getLocations(id, connection));
-		// The ROAs aren't loaded
+		// The ROAs and GBR aren't loaded
 	}
 
 	/**
