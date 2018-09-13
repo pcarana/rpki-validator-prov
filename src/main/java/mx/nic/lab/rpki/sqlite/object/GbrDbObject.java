@@ -9,8 +9,8 @@ import mx.nic.lab.rpki.db.pojo.Gbr;
 
 public class GbrDbObject extends Gbr implements DatabaseObject {
 
-	public static final String RPKI_OBJECT_COLUMN = "rpo_id";
 	public static final String ID_COLUMN = "gbr_id";
+	public static final String RPKI_OBJECT_COLUMN = "rpo_id";
 	public static final String VCARD_COLUMN = "gbr_vcard";
 
 	private Long rpkiObjectId;
@@ -41,16 +41,15 @@ public class GbrDbObject extends Gbr implements DatabaseObject {
 
 	@Override
 	public void loadFromDatabase(ResultSet resultSet) throws SQLException {
-		setRpkiObjectId(resultSet.getLong(RPKI_OBJECT_COLUMN));
 		setId(resultSet.getLong(ID_COLUMN));
+		setRpkiObjectId(resultSet.getLong(RPKI_OBJECT_COLUMN));
 		setVcard(resultSet.getString(VCARD_COLUMN));
 	}
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		// TODO This object should be stored to database
-		// updatedAt
-		// statement.setString(2, Instant.now().toString());
+		statement.setLong(1, getRpkiObjectId());
+		statement.setString(2, getVcard());
 	}
 
 	@Override

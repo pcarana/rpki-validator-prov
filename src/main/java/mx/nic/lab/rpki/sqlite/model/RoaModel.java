@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import mx.nic.lab.rpki.db.pojo.Gbr;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Roa;
 import mx.nic.lab.rpki.sqlite.database.QueryGroup;
@@ -42,7 +41,6 @@ public class RoaModel {
 	private static final String EXIST_ASN = "existAsn";
 	private static final String GET_LAST_ID = "getLastId";
 	private static final String CREATE = "create";
-	private static final String CREATE_GBR_RELATION = "createGbrRelation";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -245,7 +243,6 @@ public class RoaModel {
 			if (created < 1) {
 				return null;
 			}
-			storeRelatedObjects(newRoa, connection);
 			return newId;
 		}
 	}
@@ -302,43 +299,7 @@ public class RoaModel {
 	 */
 	private static void loadRelatedObjects(RoaDbObject roa, Connection connection) throws SQLException {
 		roa.setRpkiObject(RpkiObjectModel.getById(roa.getRpkiObjectId(), connection));
-		Long roaId = roa.getId();
-		roa.setGbrs(GbrModel.getByRoaId(roaId, connection));
-	}
-
-	/**
-	 * Store the related objects to the ROA
-	 * 
-	 * @param roa
-	 * @param connection
-	 * @throws SQLException
-	 */
-	private static void storeRelatedObjects(Roa roa, Connection connection) throws SQLException {
-		for (Gbr gbr : roa.getGbrs()) {
-			// TODO This assumes that the GBRs already exists, is this correct?
-			createGbrRelation(roa.getId(), gbr.getId(), connection);
-		}
-	}
-
-	/**
-	 * Creates a {@link Roa} relation with a {@link Gbr} based on the IDs of both of
-	 * them
-	 * 
-	 * @param roaId
-	 * @param gbrId
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static boolean createGbrRelation(Long roaId, Long gbrId, Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(CREATE_GBR_RELATION);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			statement.setLong(1, roaId);
-			statement.setLong(2, gbrId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
-			return created > 0;
-		}
+		roa.setGbrs(GbrModel.getByRoa(roa, connection));
 	}
 
 	public static QueryGroup getQueryGroup() {

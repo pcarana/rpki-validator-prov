@@ -106,7 +106,3 @@ insert into roa (
        roa_prefix_max_length,
        roa_prefix_family)
 values (?, ?, ?, ?, ?, ?, ?, ?, ?);
-
-#createGbrRelation
-insert into roa_gbr (roa_id, gbr_id)
-values (?, ?);
