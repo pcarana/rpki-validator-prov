@@ -1,0 +1,225 @@
+-- -----------------------------------------------------
+-- Table TAL
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS tal (
+  tal_id INTEGER NOT NULL,
+  tal_last_sync TEXT NULL,
+  tal_public_key TEXT NULL,
+  tal_sync_status TEXT NOT NULL,
+  tal_validation_status TEXT NOT NULL,
+  tal_name TEXT NULL,
+  tal_loaded_cer BLOB NULL,
+  PRIMARY KEY (tal_id));
+
+
+-- -----------------------------------------------------
+-- Table TAL_URI
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS tal_uri (
+  tau_id INTEGER NOT NULL,
+  tal_id INTEGER NOT NULL,
+  tau_location TEXT NOT NULL,
+  PRIMARY KEY (tau_id),
+  CONSTRAINT tal_tal_id
+    FOREIGN KEY (tal_id)
+    REFERENCES TAL (tal_id)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION);
+
+CREATE INDEX IF NOT EXISTS tal_uri_tal_id_idx ON TAL_URI (tal_id ASC);
+
+
+-- -----------------------------------------------------
+-- Table TAL_FILE
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS tal_file (
+  taf_id INTEGER NOT NULL,
+  tal_id INTEGER NOT NULL,
+  taf_file_type TEXT NOT NULL,
+  taf_status TEXT NOT NULL,
+  taf_message TEXT NULL,
+  taf_location TEXT NOT NULL,
+  PRIMARY KEY (taf_id),
+  CONSTRAINT tal_tal_id
+    FOREIGN KEY (tal_id)
+    REFERENCES TAL (tal_id)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
+CREATE INDEX IF NOT EXISTS tal_file_tal_id_idx ON TAL_FILE (tal_id ASC);
+
+
+CREATE TABLE IF NOT EXISTS rpki_repository (
+    rpr_id INTEGER,
+    rpr_updated_at TEXT NOT NULL,
+    rpr_status TEXT NOT NULL,
+    rpr_last_downloaded_at TEXT,
+    rpr_location_uri TEXT,
+    rpr_parent_repository_id INTEGER,
+    PRIMARY KEY (rpr_id),
+    CONSTRAINT rpki_repository__location_uri_unique UNIQUE (rpr_location_uri),
+    CONSTRAINT rpki_repository__parent_repository_fk FOREIGN KEY (rpr_parent_repository_id) REFERENCES rpki_repository (rpr_id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS rpki_repository__parent_repository_id_idx ON rpki_repository (rpr_parent_repository_id ASC);
+
+
+CREATE TABLE IF NOT EXISTS rpki_repository_trust_anchors (
+    rpr_id INTEGER NOT NULL,
+    tal_id INTEGER NOT NULL,
+    CONSTRAINT rpki_repository_trust_anchors__pk PRIMARY KEY (rpr_id, tal_id),
+    CONSTRAINT rpki_repository_trust_anchors__trust_anchor_fk FOREIGN KEY (tal_id) REFERENCES trust_anchor (tal_id) ON DELETE RESTRICT,
+    CONSTRAINT rpki_repository_trust_anchors__rpki_repository_fk FOREIGN KEY (rpr_id) REFERENCES rpki_repository (rpr_id) ON DELETE RESTRICT
+);
+CREATE INDEX IF NOT EXISTS rpki_repository_trust_anchors__trust_anchor_id_idx ON rpki_repository_trust_anchors (tal_id ASC);
+
+
+CREATE TABLE IF NOT EXISTS rpki_object (
+    rpo_id INTEGER NOT NULL,
+    rpo_updated_at TEXT NOT NULL,
+    rpo_type TEXT NOT NULL,
+    rpo_serial_number BLOB,
+    rpo_signing_time INTEGER,
+    rpo_last_marked_reachable_at TEXT NOT NULL,
+    rpo_authority_key_identifier BLOB,
+    rpo_subject_key_identifier BLOB,
+    rpo_sha256 BLOB NOT NULL,
+    rpo_is_ca INTEGER NOT NULL,
+    CONSTRAINT rpki_object__pk PRIMARY KEY (rpo_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS rpki_object__sha256_idx ON rpki_object (rpo_sha256 ASC);
+CREATE INDEX IF NOT EXISTS rpki_object__authority_key_identifier_idx ON rpki_object (rpo_authority_key_identifier ASC, rpo_type ASC, rpo_serial_number DESC, rpo_signing_time DESC, rpo_id DESC);
+CREATE INDEX IF NOT EXISTS rpki_object__subject_key_identifier_idx ON rpki_object (rpo_subject_key_identifier ASC);
+
+
+CREATE TABLE IF NOT EXISTS rpki_object_locations (
+    rpo_id INTEGER NOT NULL,
+    rpo_locations TEXT NOT NULL,
+    CONSTRAINT rpki_object_locations__pk PRIMARY KEY (rpo_id, rpo_locations),
+    CONSTRAINT rpki_object_locations__rpki_object_fk FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS encoded_rpki_object (
+    ero_id INTEGER NOT NULL,
+    ero_updated_at TEXT NOT NULL,
+    rpo_id INTEGER,
+    ero_encoded BLOB NOT NULL,
+    CONSTRAINT encoded_rpki_object__pk PRIMARY KEY (ero_id),
+    CONSTRAINT encoded_rpki_object__rpki_object_id_unique UNIQUE (rpo_id ASC),
+    CONSTRAINT encoded_rpki_object__rpki_object_id_fk FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS validation_run (
+    var_id INTEGER,
+    var_updated_at TEXT NOT NULL,
+    var_completed_at TEXT,
+    var_status TEXT NOT NULL,
+    var_type TEXT NOT NULL,
+    tal_id INTEGER,
+    var_tal_certificate_uri TEXT,
+    PRIMARY KEY (var_id),
+    FOREIGN KEY (tal_id) REFERENCES tal (tal_id) ON DELETE RESTRICT
+);
+CREATE INDEX IF NOT EXISTS validation_run__trust_anchor_id_idx ON validation_run (tal_id ASC);
+
+CREATE TABLE IF NOT EXISTS validation_check (
+    vac_id INTEGER,
+    vac_updated_at TEXT NOT NULL,
+    var_id INTEGER NOT NULL,
+    vac_location TEXT NOT NULL,
+    vac_status TEXT NOT NULL,
+    vac_key TEXT NOT NULL,
+    PRIMARY KEY (vac_id),
+    FOREIGN KEY (var_id) REFERENCES validation_run (var_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS validation_check__validation_run_id_idx ON validation_check (var_id ASC, vac_id ASC);
+
+
+CREATE TABLE IF NOT EXISTS validation_check_parameters (
+    vac_id INTEGER NOT NULL,
+    vcp_id INTEGER NOT NULL,
+    vcp_parameters TEXT NOT NULL,
+    CONSTRAINT validation_check_parameters__pk PRIMARY KEY (vac_id, vcp_id),
+    CONSTRAINT validation_check_parameters__validation_check_fk FOREIGN KEY (vac_id) REFERENCES validation_check (vac_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS validation_run_validated_objects (
+    var_id INTEGER NOT NULL,
+    rpo_id INTEGER NOT NULL,
+    CONSTRAINT validation_run_validated_objects__pk PRIMARY KEY (var_id, rpo_id),
+    CONSTRAINT validation_run_validated_objects__validation_run_fk FOREIGN KEY (var_id) REFERENCES validation_run (var_id) ON DELETE CASCADE,
+    CONSTRAINT validation_run_validated_objects__rpki_object_fk FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS validation_run_validated_objects__rpki_object_idx ON validation_run_validated_objects (rpo_id);
+
+
+CREATE TABLE IF NOT EXISTS validation_run_rpki_repositories (
+    var_id INTEGER NOT NULL,
+    rpr_id INTEGER NOT NULL,
+    CONSTRAINT validation_run_rpki_repositories__pk PRIMARY KEY (var_id, rpr_id),
+    CONSTRAINT validation_run_rpki_repositories__validation_run_fk FOREIGN KEY (var_id) REFERENCES validation_run (var_id) ON DELETE CASCADE,
+    CONSTRAINT validation_run_rpki_repositories__rpki_repository_fk FOREIGN KEY (rpr_id) REFERENCES rpki_repository (rpr_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS validation_run_rpki_repositories__rpki_repository_idx ON validation_run_rpki_repositories (rpr_id);
+
+
+-- -----------------------------------------------------
+-- Table ROA
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS roa (
+  rpo_id INTEGER NOT NULL,
+  roa_id INTEGER NOT NULL,
+  roa_asn INTEGER NOT NULL,
+  roa_prefix_text TEXT NOT NULL,
+  roa_start_prefix BLOB NOT NULL,
+  roa_end_prefix BLOB NOT NULL,
+  roa_prefix_length INTEGER NOT NULL,
+  roa_prefix_max_length INTEGER NOT NULL,
+  roa_prefix_family INTEGER NOT NULL CHECK (roa_prefix_family IN (4, 6)),
+  PRIMARY KEY (rpo_id, roa_id),
+  CONSTRAINT roa__rpki_object_fk FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE);
+
+CREATE INDEX IF NOT EXISTS start_prefix_idx ON roa (roa_start_prefix ASC);
+CREATE INDEX IF NOT EXISTS end_prefix_idx ON roa (roa_end_prefix ASC);
+
+
+-- -----------------------------------------------------
+-- Table GBR
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS gbr (
+  gbr_id INTEGER,
+  rpo_id INTEGER NOT NULL,
+  gbr_vcard TEXT NOT NULL,
+  PRIMARY KEY (gbr_id),
+  FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE);
+
+
+-- -----------------------------------------------------
+-- Table SLURM_PREFIX
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS slurm_prefix (
+  slp_id INTEGER NOT NULL,
+  slp_asn INTEGER NULL,
+  slp_prefix_text TEXT NULL,
+  slp_start_prefix BLOB NULL,
+  slp_end_prefix BLOB NULL,
+  slp_prefix_length INTEGER NULL,
+  slp_prefix_max_length INTEGER NULL,
+  slp_type INTEGER NOT NULL,
+  slp_comment TEXT NULL,
+  PRIMARY KEY (slp_id));
+
+
+-- -----------------------------------------------------
+-- Table SLURM_BGPSEC
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS slurm_bgpsec (
+  slb_id INTEGER NOT NULL,
+  slb_asn INTEGER NULL,
+  slb_ski TEXT NULL,
+  slb_public_key TEXT NULL,
+  slb_type INTEGER NOT NULL,
+  slb_comment TEXT NULL,
+  PRIMARY KEY (slb_id));

@@ -1,5 +1,9 @@
 package mx.nic.lab.rpki.sqlite.database;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -111,6 +115,7 @@ public class DatabaseSession {
 
 		SQLiteDataSource sqliteDataSource = new SQLiteDataSource();
 		sqliteDataSource.setUrl(url);
+		sqliteDataSource.setEnforceForeignKeys(true);
 
 		// Load the test query, if not present then load the most common
 		// (http://stackoverflow.com/questions/3668506)
@@ -120,7 +125,11 @@ public class DatabaseSession {
 		} catch (SQLException e) {
 			throw new InitializationException("The database connection test yielded failure.", e);
 		}
-
+		try {
+			createTables(sqliteDataSource);
+		} catch (IOException | SQLException e) {
+			throw new InitializationException("The database tables creation failed.", e);
+		}
 		return sqliteDataSource;
 	}
 
@@ -132,9 +141,38 @@ public class DatabaseSession {
 			if (!resultSet.next()) {
 				throw new SQLException("'" + testQuery + "' returned no rows.");
 			}
-			int result = resultSet.getInt(1);
-			if (result != 1) {
-				throw new SQLException("'" + testQuery + "' returned " + result);
+		}
+	}
+
+	/**
+	 * Try to create the tables (just in case that they don't exist)
+	 * 
+	 * @param dataSource
+	 * @throws IOException
+	 * @throws SQLException
+	 */
+	private static void createTables(DataSource dataSource) throws IOException, SQLException {
+		String fileName = "META-INF/createDatabase.sql";
+		InputStream in = DatabaseSession.class.getClassLoader().getResourceAsStream(fileName);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+			StringBuilder querySB = new StringBuilder();
+			String currentLine;
+			while ((currentLine = reader.readLine()) != null) {
+				// Supported comments start with "--"
+				if (!currentLine.startsWith("--")) {
+					querySB.append(currentLine);
+					if (currentLine.trim().endsWith(";")) {
+						String queryString = querySB.toString();
+						// Execute the statement
+						try (Connection connection = dataSource.getConnection();
+								Statement statement = connection.createStatement()) {
+							statement.executeUpdate(queryString);
+						}
+						querySB.setLength(0);
+					} else {
+						querySB.append(" ");
+					}
+				}
 			}
 		}
 	}
