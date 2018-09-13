@@ -12,7 +12,6 @@ import java.util.Map;
 
 import mx.nic.lab.rpki.db.exception.ValidationError;
 import mx.nic.lab.rpki.db.exception.ValidationException;
-import mx.nic.lab.rpki.db.pojo.RpkiObject;
 import mx.nic.lab.rpki.db.pojo.ValidationRun;
 
 public class ValidationRunDbObject extends ValidationRun implements DatabaseObject {
@@ -28,7 +27,7 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 	private Long talId;
 
 	/**
-	 * Mapping of the {@link RpkiObject} properties to its corresponding DB column
+	 * Mapping of the {@link ValidationRun} properties to its corresponding DB column
 	 */
 	public static final Map<String, String> propertyToColumnMap;
 	static {
