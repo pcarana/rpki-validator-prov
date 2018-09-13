@@ -64,28 +64,27 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		statement.setLong(1, getId());
 		// updatedAt
-		statement.setString(2, Instant.now().toString());
+		statement.setString(1, Instant.now().toString());
 		if (getValidationRunId() != null) {
-			statement.setLong(3, getValidationRunId());
+			statement.setLong(2, getValidationRunId());
 		} else {
-			statement.setNull(3, Types.NUMERIC);
+			statement.setNull(2, Types.NUMERIC);
 		}
 		if (getLocation() != null) {
-			statement.setString(4, getLocation());
+			statement.setString(3, getLocation());
+		} else {
+			statement.setNull(3, Types.VARCHAR);
+		}
+		if (getStatus() != null) {
+			statement.setString(4, getStatus().toString());
 		} else {
 			statement.setNull(4, Types.VARCHAR);
 		}
-		if (getStatus() != null) {
-			statement.setString(5, getStatus().toString());
+		if (getKey() != null) {
+			statement.setString(5, getKey());
 		} else {
 			statement.setNull(5, Types.VARCHAR);
-		}
-		if (getKey() != null) {
-			statement.setString(6, getKey());
-		} else {
-			statement.setNull(6, Types.VARCHAR);
 		}
 	}
 

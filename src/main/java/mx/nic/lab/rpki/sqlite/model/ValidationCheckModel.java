@@ -32,8 +32,8 @@ public class ValidationCheckModel {
 
 	// Queries IDs used by this model
 	private static final String GET_BY_VALIDATION_RUN_ID = "getByValidationRunId";
+	private static final String GET_BY_UNIQUE = "getByUnique";
 	private static final String GET_PARAMETERS = "getParameters";
-	private static final String GET_LAST_ID = "getLastId";
 	private static final String GET_LAST_PARAMETER_ID = "getLastParameterId";
 	private static final String CREATE = "create";
 	private static final String CREATE_PARAMETER = "createParameter";
@@ -65,8 +65,6 @@ public class ValidationCheckModel {
 	public static Long create(ValidationCheck newValidationCheck, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			Long newId = getLastId(connection) + 1;
-			newValidationCheck.setId(newId);
 			ValidationCheckDbObject stored = new ValidationCheckDbObject(newValidationCheck);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
@@ -74,27 +72,10 @@ public class ValidationCheckModel {
 			if (created < 1) {
 				return null;
 			}
+			stored = getByUniqueFields(stored, connection);
+			newValidationCheck.setId(stored.getId());
 			storeRelatedObjects(newValidationCheck, connection);
-			return newId;
-		}
-	}
-
-	/**
-	 * Get the last registered ID
-	 * 
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static Long getLastId(Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(GET_LAST_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			ResultSet rs = statement.executeQuery();
-			// First in the table
-			if (!rs.next()) {
-				return 0L;
-			}
-			return rs.getLong(1);
+			return newValidationCheck.getId();
 		}
 	}
 
@@ -120,6 +101,69 @@ public class ValidationCheckModel {
 				validationChecks.add(validationCheck);
 			}
 			return validationChecks;
+		}
+	}
+
+	/**
+	 * Return a {@link PreparedStatement} that contains the necessary parameters to
+	 * make a search of a unique {@link ValidationCheck} based on properties
+	 * distinct that the ID
+	 * 
+	 * @param validationCheck
+	 * @param queryId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static PreparedStatement prepareUniqueSearch(ValidationCheck validationCheck, String queryId,
+			Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(queryId);
+		StringBuilder parameters = new StringBuilder();
+		int currentIdx = 1;
+		int varIdIdx = -1;
+		int locationIdx = -1;
+		int keyIdx = -1;
+		if (validationCheck.getValidationRun() != null) {
+			parameters.append(" and ").append(ValidationCheckDbObject.VALIDATION_RUN_COLUMN).append(" = ? ");
+			varIdIdx = currentIdx++;
+		}
+		if (validationCheck.getLocation() != null) {
+			parameters.append(" and ").append(ValidationCheckDbObject.LOCATION_COLUMN).append(" = ? ");
+			locationIdx = currentIdx++;
+		}
+		if (validationCheck.getKey() != null) {
+			parameters.append(" and ").append(ValidationCheckDbObject.KEY_COLUMN).append(" = ? ");
+			keyIdx = currentIdx++;
+		}
+		query = query.replace("[and]", parameters.toString());
+		PreparedStatement statement = connection.prepareStatement(query);
+		if (varIdIdx > 0) {
+			statement.setLong(varIdIdx, validationCheck.getValidationRun().getId());
+		}
+		if (locationIdx > 0) {
+			statement.setString(locationIdx, validationCheck.getLocation());
+		}
+		if (keyIdx > 0) {
+			statement.setString(keyIdx, validationCheck.getKey());
+		}
+		return statement;
+	}
+
+	/**
+	 * Get a {@link ValidationCheck} by its unique fields
+	 * 
+	 * @param validationCheck
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static ValidationCheckDbObject getByUniqueFields(ValidationCheck validationCheck, Connection connection)
+			throws SQLException {
+		try (PreparedStatement statement = prepareUniqueSearch(validationCheck, GET_BY_UNIQUE, connection)) {
+			ResultSet resultSet = statement.executeQuery();
+			ValidationCheckDbObject found = new ValidationCheckDbObject(resultSet);
+			loadRelatedObjects(found, connection);
+			return found;
 		}
 	}
 
