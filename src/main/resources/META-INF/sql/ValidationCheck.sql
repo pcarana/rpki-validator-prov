@@ -10,7 +10,7 @@ select vac_id,
 
 #getParameters
 select vcp_parameters
-  from validation_check
+  from validation_check_parameters
  where vac_id = ?;
 
 #getLastParameterId
