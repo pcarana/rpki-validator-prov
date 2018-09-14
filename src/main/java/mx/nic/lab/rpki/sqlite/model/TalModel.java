@@ -311,7 +311,7 @@ public class TalModel {
 	 */
 	private static void loadRelatedObjects(Tal tal, Connection connection) throws SQLException {
 		Long talId = tal.getId();
-		tal.setTalFiles(TalFileModel.getByTalId(talId, connection));
+		tal.setValidationRuns(ValidationRunModel.getByTalId(talId, connection));
 		tal.setTalUris(TalUriModel.getByTalId(talId, connection));
 	}
 

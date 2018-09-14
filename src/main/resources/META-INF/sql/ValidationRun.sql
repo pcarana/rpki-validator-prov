@@ -45,3 +45,15 @@ select var_id,
  where 1 = 1
  [and]
  order by var_id desc;
+
+#getByTalId
+select var_id,
+       var_updated_at,
+       var_completed_at,
+       var_status,
+       var_type,
+       tal_id,
+       var_tal_certificate_uri
+  from validation_run
+ where tal_id = ?
+ order by var_id desc;

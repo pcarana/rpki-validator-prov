@@ -27,7 +27,6 @@ public class QueryLoader {
 		RpkiRepositoryModel.loadQueryGroup(schema);
 		SlurmBgpsecModel.loadQueryGroup(schema);
 		SlurmPrefixModel.loadQueryGroup(schema);
-		TalFileModel.loadQueryGroup(schema);
 		TalModel.loadQueryGroup(schema);
 		TalUriModel.loadQueryGroup(schema);
 		ValidationCheckModel.loadQueryGroup(schema);

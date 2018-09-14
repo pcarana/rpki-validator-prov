@@ -29,26 +29,6 @@ CREATE TABLE IF NOT EXISTS tal_uri (
 CREATE INDEX IF NOT EXISTS tal_uri_tal_id_idx ON TAL_URI (tal_id ASC);
 
 
--- -----------------------------------------------------
--- Table TAL_FILE
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS tal_file (
-  taf_id INTEGER NOT NULL,
-  tal_id INTEGER NOT NULL,
-  taf_file_type TEXT NOT NULL,
-  taf_status TEXT NOT NULL,
-  taf_message TEXT NULL,
-  taf_location TEXT NOT NULL,
-  PRIMARY KEY (taf_id),
-  CONSTRAINT tal_tal_id
-    FOREIGN KEY (tal_id)
-    REFERENCES TAL (tal_id)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-CREATE INDEX IF NOT EXISTS tal_file_tal_id_idx ON TAL_FILE (tal_id ASC);
-
-
 CREATE TABLE IF NOT EXISTS rpki_repository (
     rpr_id INTEGER,
     rpr_updated_at TEXT NOT NULL,

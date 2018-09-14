@@ -21,10 +21,8 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 	public static final String COMPLETED_AT_COLUMN = "var_completed_at";
 	public static final String STATUS_COLUMN = "var_status";
 	public static final String TYPE_COLUMN = "var_type";
-	public static final String TAL_COLUMN = "tal_id";
+	public static final String TAL_ID_COLUMN = "tal_id";
 	public static final String TAL_CERTIFICATE_URI_COLUMN = "var_tal_certificate_uri";
-
-	private Long talId;
 
 	/**
 	 * Mapping of the {@link ValidationRun} properties to its corresponding DB column
@@ -37,7 +35,7 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 		propertyToColumnMap.put(COMPLETED_AT, COMPLETED_AT_COLUMN);
 		propertyToColumnMap.put(STATUS, STATUS_COLUMN);
 		propertyToColumnMap.put(TYPE, TYPE_COLUMN);
-		propertyToColumnMap.put(TAL, TAL_COLUMN);
+		propertyToColumnMap.put(TAL_ID, TAL_ID_COLUMN);
 		propertyToColumnMap.put(TAL_CERTIFICATE_URI, TAL_CERTIFICATE_URI_COLUMN);
 	}
 
@@ -51,15 +49,12 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 		this.setUpdatedAt(validationRun.getUpdatedAt());
 		this.setCompletedAt(validationRun.getCompletedAt());
 		this.setStatus(validationRun.getStatus());
-		this.setTal(validationRun.getTal());
+		this.setTalId(validationRun.getTalId());
 		this.setTalCertificateURI(validationRun.getTalCertificateURI());
 		this.setRpkiRepositories(validationRun.getRpkiRepositories());
 		this.setRpkiObjects(validationRun.getRpkiObjects());
 		this.setValidatedObjects(validationRun.getValidatedObjects());
 		this.setValidationChecks(validationRun.getValidationChecks());
-		if (getTal() != null) {
-			this.setTalId(getTal().getId());
-		}
 	}
 
 	public ValidationRunDbObject(ResultSet resultSet) throws SQLException {
@@ -76,7 +71,7 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 		setUpdatedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
 		setCompletedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(COMPLETED_AT_COLUMN)));
 		setStatus(DatabaseObject.getStringAsEnum(Status.class, resultSet.getString(STATUS_COLUMN)));
-		setTalId(resultSet.getLong(TAL_COLUMN));
+		setTalId(resultSet.getLong(TAL_ID_COLUMN));
 		if (resultSet.wasNull()) {
 			setTalId(null);
 		}
@@ -123,13 +118,5 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 		if (!validationErrors.isEmpty()) {
 			throw new ValidationException(validationErrors);
 		}
-	}
-
-	public Long getTalId() {
-		return talId;
-	}
-
-	public void setTalId(Long talId) {
-		this.talId = talId;
 	}
 }

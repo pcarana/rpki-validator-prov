@@ -40,6 +40,7 @@ public class ValidationRunModel {
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_BY_UNIQUE = "getByUnique";
 	private static final String GET_ALL = "getAll";
+	private static final String GET_BY_TAL_ID = "getByTalId";
 	private static final String CREATE = "create";
 	private static final String CREATE_REPOSITORY_RELATION = "createRepositoryRelation";
 	private static final String CREATE_RPKI_OBJ_RELATION = "createValidObjectsRelation";
@@ -112,6 +113,33 @@ public class ValidationRunModel {
 	}
 
 	/**
+	 * Get all the {@link ValidationRun}s related to a TAL, return empty list when
+	 * no files are found
+	 * 
+	 * @param talId
+	 * @param pagingParams
+	 * @param connection
+	 * @return The list of {@link ValidationRun}s, or empty list when no data is
+	 *         found
+	 * @throws SQLException
+	 */
+	public static List<ValidationRun> getByTalId(Long talId, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setLong(1, talId);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			ResultSet rs = statement.executeQuery();
+			List<ValidationRun> validationRuns = new ArrayList<ValidationRun>();
+			while (rs.next()) {
+				ValidationRunDbObject validationRun = new ValidationRunDbObject(rs);
+				validationRuns.add(validationRun);
+				loadRelatedObjects(validationRun, connection);
+			}
+			return validationRuns;
+		}
+	}
+
+	/**
 	 * Delete the {@link ValidationRun}s that were completed before
 	 * <code>completedBefore</code>
 	 * 
@@ -164,9 +192,6 @@ public class ValidationRunModel {
 	 */
 	private static void loadRelatedObjects(ValidationRunDbObject validationRun, Connection connection)
 			throws SQLException {
-		if (validationRun.getTalId() != null) {
-			validationRun.setTal(TalModel.getById(validationRun.getTalId(), connection));
-		}
 		validationRun.setRpkiRepositories(RpkiRepositoryModel.getByValidationRunId(validationRun.getId(), connection));
 		validationRun
 				.setValidatedObjects(RpkiObjectModel.getValidatedByValidationRunId(validationRun.getId(), connection));
@@ -271,8 +296,8 @@ public class ValidationRunModel {
 		int talIdIdx = -1;
 		int typeIdx = -1;
 		int statusIdx = -1;
-		if (validationRun.getTal() != null) {
-			parameters.append(" and ").append(ValidationRunDbObject.TAL_COLUMN).append(" = ? ");
+		if (validationRun.getTalId() != null) {
+			parameters.append(" and ").append(ValidationRunDbObject.TAL_ID_COLUMN).append(" = ? ");
 			talIdIdx = currentIdx++;
 		}
 		if (validationRun.getType() != null) {
@@ -286,7 +311,7 @@ public class ValidationRunModel {
 		query = query.replace("[and]", parameters.toString());
 		PreparedStatement statement = connection.prepareStatement(query);
 		if (talIdIdx > 0) {
-			statement.setLong(talIdIdx, validationRun.getTal().getId());
+			statement.setLong(talIdIdx, validationRun.getTalId());
 		}
 		if (typeIdx > 0) {
 			statement.setString(typeIdx, validationRun.getType().toString());

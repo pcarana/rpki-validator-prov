@@ -51,7 +51,7 @@ public class TalDbObject extends Tal implements DatabaseObject {
 		this.setName(tal.getName());
 		this.setLoadedCer(tal.getLoadedCer());
 		this.setTalUris(new ArrayList<>(tal.getTalUris()));
-		this.setTalFiles(new ArrayList<>(tal.getTalFiles()));
+		this.setValidationRuns(new ArrayList<>(tal.getValidationRuns()));
 	}
 
 	/**
