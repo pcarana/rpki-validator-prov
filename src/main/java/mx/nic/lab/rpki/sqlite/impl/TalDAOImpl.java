@@ -41,18 +41,9 @@ public class TalDAOImpl implements TalDAO {
 	}
 
 	@Override
-	public Tal syncById(Long id) throws ApiDataAccessException {
+	public Tal getExistentTal(Tal tal) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return TalModel.syncById(id, connection);
-		} catch (SQLException e) {
-			throw new ApiDataAccessException(e);
-		}
-	}
-
-	@Override
-	public List<Tal> syncAll() throws ApiDataAccessException {
-		try (Connection connection = DatabaseSession.getConnection()) {
-			return TalModel.syncAll(connection);
+			return TalModel.getExistentTal(tal, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

@@ -20,6 +20,16 @@ insert into validation_run (
        var_tal_certificate_uri)
 values (?, ?, ?, ?, ?, ?);
 
+#update
+update validation_run
+   set var_updated_at = ?,
+       var_completed_at = ?,
+       var_status = ?,
+       var_type = ?,
+       tal_id = ?,
+       var_tal_certificate_uri = ?
+ where var_id = ?;
+
 #createRepositoryRelation
 insert into validation_run_rpki_repositories (var_id, rpr_id)
 values (?, ?);

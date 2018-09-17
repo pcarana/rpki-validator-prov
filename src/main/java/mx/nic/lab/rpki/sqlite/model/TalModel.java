@@ -38,8 +38,7 @@ public class TalModel {
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_BY_RPKI_REPO_ID = "getByRpkiRepositoryId";
 	private static final String GET_ALL = "getAll";
-	private static final String SYNC_BY_ID = "syncById";
-	private static final String GET_LAST_ID = "getLastId";
+	private static final String GET_BY_UNIQUE = "getByUnique";
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
 	private static final String DELETE = "delete";
@@ -112,54 +111,29 @@ public class TalModel {
 	}
 
 	/**
-	 * Sync a {@link Tal} by its ID, return null if no data is found
+	 * Get an existent {@link Tal} by its unique fields, return null if no data is
+	 * found
 	 * 
 	 * @param id
 	 * @param connection
-	 * @return The {@link Tal} that will be synchronized
+	 * @return The {@link Tal} found
 	 * @throws SQLException
 	 */
-	public static Tal syncById(Long id, Connection connection) throws SQLException {
-		// First get the TAL and check status
-		Tal tal = TalModel.getById(id, connection);
-		if (tal == null) {
-			return null;
-		}
-		if (Tal.SyncStatus.SYNCHRONIZING.toString().equalsIgnoreCase(tal.getSyncStatus())) {
-			return tal;
-		}
-		String query = getQueryGroup().getQuery(SYNC_BY_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			statement.setLong(1, id);
+	public static Tal getExistentTal(Tal tal, Connection connection) throws SQLException {
+		try (PreparedStatement statement = prepareUniqueSearch(tal, GET_BY_UNIQUE, connection)) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int result = statement.executeUpdate();
-			if (result == 0) {
+			ResultSet rs = statement.executeQuery();
+			if (!rs.next()) {
 				return null;
 			}
+			Tal found = null;
+			do {
+				found = new TalDbObject(rs);
+				loadRelatedObjects(found, connection);
+			} while (rs.next());
 
-			return TalModel.getById(id, connection);
+			return found;
 		}
-	}
-
-	/**
-	 * Sync all the {@link Tal}s, return empty list when no files are found nor
-	 * could be synchronized
-	 * 
-	 * @param connection
-	 * @return The list of {@link Tal}s, or empty list when no data is found nor
-	 *         could be synchronized
-	 * @throws SQLException
-	 */
-	public static List<Tal> syncAll(Connection connection) throws SQLException {
-		List<Tal> loadedTals = TalModel.getAll(null, connection);
-		List<Tal> syncdTals = new ArrayList<Tal>();
-		for (Tal loadedTal : loadedTals) {
-			Tal syncdTal = TalModel.syncById(loadedTal.getId(), connection);
-			if (syncdTal != null) {
-				syncdTals.add(syncdTal);
-			}
-		}
-		return syncdTals;
 	}
 
 	/**
@@ -171,28 +145,7 @@ public class TalModel {
 	 * @throws SQLException
 	 */
 	public static boolean exist(Tal tal, Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(EXIST);
-		StringBuilder parameters = new StringBuilder();
-		int currentIdx = 1;
-		int publicKeyIdx = -1;
-		int nameIdx = -1;
-		if (tal.getPublicKey() != null) {
-			parameters.append(" and ").append(TalDbObject.PUBLIC_KEY_COLUMN).append(" = ? ");
-			publicKeyIdx = currentIdx++;
-		}
-		if (tal.getName() != null) {
-			parameters.append(" and ").append(TalDbObject.NAME_COLUMN).append(" = ? ");
-			nameIdx = currentIdx++;
-		}
-		query = query.replace("[and]", parameters.toString());
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			if (publicKeyIdx > 0) {
-				statement.setString(publicKeyIdx, tal.getPublicKey());
-			}
-			if (nameIdx > 0) {
-				statement.setString(nameIdx, tal.getName());
-			}
-
+		try (PreparedStatement statement = prepareUniqueSearch(tal, EXIST, connection)) {
 			ResultSet rs = statement.executeQuery();
 			return rs.next();
 		}
@@ -209,8 +162,6 @@ public class TalModel {
 	public static Long create(Tal newTal, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			Long newId = getLastId(connection) + 1;
-			newTal.setId(newId);
 			TalDbObject stored = new TalDbObject(newTal);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
@@ -218,27 +169,10 @@ public class TalModel {
 			if (created < 1) {
 				return null;
 			}
+			stored = getByUniqueFields(stored, connection);
+			newTal.setId(stored.getId());
 			storeRelatedObjects(newTal, connection);
-			return newId;
-		}
-	}
-
-	/**
-	 * Get the last registered ID
-	 * 
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static Long getLastId(Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(GET_LAST_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			ResultSet rs = statement.executeQuery();
-			// First in the table
-			if (!rs.next()) {
-				return 0L;
-			}
-			return rs.getLong(1);
+			return newTal.getId();
 		}
 	}
 
@@ -301,7 +235,7 @@ public class TalModel {
 			return statement.executeUpdate();
 		}
 	}
-	
+
 	/**
 	 * Load all the related objects to the TAL
 	 * 
@@ -326,6 +260,52 @@ public class TalModel {
 		for (TalUri talUri : tal.getTalUris()) {
 			talUri.setTalId(tal.getId());
 			TalUriModel.create(talUri, connection);
+		}
+	}
+
+	/**
+	 * Return a {@link PreparedStatement} that contains the necessary parameters to
+	 * make a search of a unique {@link Tal} based on properties distinct that the
+	 * ID
+	 * 
+	 * @param tal
+	 * @param queryId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static PreparedStatement prepareUniqueSearch(Tal tal, String queryId, Connection connection)
+			throws SQLException {
+		String query = getQueryGroup().getQuery(queryId);
+		StringBuilder parameters = new StringBuilder();
+		int currentIdx = 1;
+		int publicKeyIdx = -1;
+		if (tal.getPublicKey() != null) {
+			parameters.append(" and ").append(TalDbObject.PUBLIC_KEY_COLUMN).append(" = ? ");
+			publicKeyIdx = currentIdx++;
+		}
+		query = query.replace("[and]", parameters.toString());
+		PreparedStatement statement = connection.prepareStatement(query);
+		if (publicKeyIdx > 0) {
+			statement.setString(publicKeyIdx, tal.getPublicKey());
+		}
+		return statement;
+	}
+
+	/**
+	 * Get a {@link Tal} by its unique fields
+	 * 
+	 * @param tal
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static TalDbObject getByUniqueFields(Tal tal, Connection connection) throws SQLException {
+		try (PreparedStatement statement = prepareUniqueSearch(tal, GET_BY_UNIQUE, connection)) {
+			ResultSet resultSet = statement.executeQuery();
+			TalDbObject found = new TalDbObject(resultSet);
+			loadRelatedObjects(found, connection);
+			return found;
 		}
 	}
 

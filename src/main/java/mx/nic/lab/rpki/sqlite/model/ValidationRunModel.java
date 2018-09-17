@@ -45,6 +45,7 @@ public class ValidationRunModel {
 	private static final String CREATE_REPOSITORY_RELATION = "createRepositoryRelation";
 	private static final String CREATE_RPKI_OBJ_RELATION = "createValidObjectsRelation";
 	private static final String DELETE_OLD = "deleteOld";
+	private static final String UPDATE = "update";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -180,6 +181,28 @@ public class ValidationRunModel {
 			newValidationRun.setId(stored.getId());
 			storeRelatedObjects(newValidationRun, connection);
 			return newValidationRun.getId();
+		}
+	}
+
+	/**
+	 * Updates a {@link ValidationRun} returns whether the operation was successful
+	 * or not created.
+	 * 
+	 * @param validationRun
+	 * @param connection
+	 * @return <code>boolean</code> to indicate success
+	 * @throws SQLException
+	 */
+	public static int completeValidation(ValidationRun validationRun, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(UPDATE);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			ValidationRunDbObject stored = new ValidationRunDbObject(validationRun);
+			stored.storeToDatabase(statement);
+			statement.setLong(statement.getParameterMetaData().getParameterCount(), validationRun.getId());
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			int updated = statement.executeUpdate();
+			storeRelatedObjects(validationRun, connection);
+			return updated;
 		}
 	}
 
