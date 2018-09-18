@@ -62,6 +62,7 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 		this.setSha256(rpkiObject.getSha256());
 		this.setIsCa(rpkiObject.isCa());
 		this.setEncodedRpkiObject(rpkiObject.getEncodedRpkiObject());
+		this.setRpkiRepositories(rpkiObject.getRpkiRepositories());
 		this.setLocations(rpkiObject.getLocations());
 		this.setRoas(rpkiObject.getRoas());
 		this.setGbr(rpkiObject.getGbr());
@@ -107,45 +108,44 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		statement.setLong(1, getId());
 		// updatedAt
-		statement.setString(2, Instant.now().toString());
+		statement.setString(1, Instant.now().toString());
 		if (getType() != null) {
-			statement.setString(3, getType().toString());
+			statement.setString(2, getType().toString());
 		} else {
-			statement.setNull(3, Types.VARCHAR);
+			statement.setNull(2, Types.VARCHAR);
 		}
 		if (getSerialNumber() != null) {
-			statement.setBytes(4, getSerialNumber().toByteArray());
+			statement.setBytes(3, getSerialNumber().toByteArray());
 		} else {
-			statement.setNull(4, Types.BLOB);
+			statement.setNull(3, Types.BLOB);
 		}
 		if (getSigningTime() != null) {
-			statement.setString(5, getSigningTime().toString());
+			statement.setString(4, getSigningTime().toString());
+		} else {
+			statement.setNull(4, Types.VARCHAR);
+		}
+		if (getLastMarkedReachableAt() != null) {
+			statement.setString(5, getLastMarkedReachableAt().toString());
 		} else {
 			statement.setNull(5, Types.VARCHAR);
 		}
-		if (getLastMarkedReachableAt() != null) {
-			statement.setString(6, getLastMarkedReachableAt().toString());
-		} else {
-			statement.setNull(6, Types.VARCHAR);
-		}
 		if (getAuthorityKeyIdentifier() != null) {
-			statement.setBytes(7, getAuthorityKeyIdentifier());
+			statement.setBytes(6, getAuthorityKeyIdentifier());
+		} else {
+			statement.setNull(6, Types.BLOB);
+		}
+		if (getSubjectKeyIdentifier() != null) {
+			statement.setBytes(7, getSubjectKeyIdentifier());
 		} else {
 			statement.setNull(7, Types.BLOB);
 		}
-		if (getSubjectKeyIdentifier() != null) {
-			statement.setBytes(8, getSubjectKeyIdentifier());
+		if (getSha256() != null) {
+			statement.setBytes(8, getSha256());
 		} else {
 			statement.setNull(8, Types.BLOB);
 		}
-		if (getSha256() != null) {
-			statement.setBytes(9, getSha256());
-		} else {
-			statement.setNull(9, Types.BLOB);
-		}
-		statement.setBoolean(10, isCa());
+		statement.setBoolean(9, isCa());
 	}
 
 	@Override

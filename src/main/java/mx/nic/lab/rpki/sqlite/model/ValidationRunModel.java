@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -128,6 +127,7 @@ public class ValidationRunModel {
 		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			statement.setLong(1, talId);
+			statement.setLong(2, talId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
 			List<ValidationRun> validationRuns = new ArrayList<ValidationRun>();
@@ -142,17 +142,18 @@ public class ValidationRunModel {
 
 	/**
 	 * Delete the {@link ValidationRun}s that were completed before
-	 * <code>completedBefore</code>
+	 * the one received
 	 * 
-	 * @param completedBefore
+	 * @param validationRun
 	 * @param connection
 	 * @return
 	 * @throws SQLException
 	 */
-	public static int deleteOldValidationRuns(Instant completedBefore, Connection connection) throws SQLException {
+	public static int deleteOldValidationRuns(ValidationRun validationRun, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(DELETE_OLD);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			statement.setString(1, completedBefore.toString());
+			statement.setLong(1, validationRun.getId());
+			statement.setString(2, validationRun.getType().toString());
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			return statement.executeUpdate();
 		}
@@ -231,11 +232,11 @@ public class ValidationRunModel {
 	private static void storeRelatedObjects(ValidationRun validationRun, Connection connection) throws SQLException {
 		// FIXME @pcarana What to do with validationRun.getRpkiObjects()
 		// validationRun.getRpkiObjects()
-		Set<RpkiRepository> rpkiRepositories = validationRun.getRpkiRepositories();
+		Set<Long> rpkiRepositories = validationRun.getRpkiRepositories();
 		if (rpkiRepositories != null) {
-			for (RpkiRepository rpkiRepository : rpkiRepositories) {
+			for (Long rpkiRepositoryId : rpkiRepositories) {
 				// The rpkiRepository is already stored at DB
-				createRepositoriesRelation(validationRun.getId(), rpkiRepository.getId(), connection);
+				createRepositoriesRelation(validationRun.getId(), rpkiRepositoryId, connection);
 			}
 		}
 		Set<RpkiObject> rpkiObjects = validationRun.getValidatedObjects();

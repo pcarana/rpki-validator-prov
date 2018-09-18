@@ -38,6 +38,11 @@ select r.rpr_id,
   join validation_run_rpki_repositories v on v.rpr_id = r.rpr_id
  where v.var_id = ?;
 
+#getByTalId
+select rpr_id
+  from rpki_repository_trust_anchors
+ where tal_id = ?;
+
 #getAll
 select rpr_id,
        rpr_updated_at,
@@ -69,3 +74,10 @@ values (?, ?);
 update rpki_repository
    set rpr_parent_repository_id = ?
  where rpr_id = ?;
+
+#deleteByTalId
+delete from rpki_repository
+ where rpr_id in (
+   select rpr_id
+     from rpki_repository_trust_anchors
+    where tal_id = ?);

@@ -44,6 +44,8 @@ public class RpkiRepositoryModel {
 	private static final String GET_ALL = "getAll";
 	private static final String CREATE_TAL_RELATION = "createTalRelation";
 	private static final String UPDATE_PARENT_REPOSITORY = "updateParentRepository";
+	private static final String GET_BY_TAL_ID = "getByTalId";
+	private static final String DELETE_BY_TAL_ID = "deleteByTalId";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -168,18 +170,17 @@ public class RpkiRepositoryModel {
 		}
 	}
 
-	public static Set<RpkiRepository> getByValidationRunId(Long validationRunId, Connection connection)
+	public static Set<Long> getByValidationRunId(Long validationRunId, Connection connection)
 			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_VALIDATION_RUN_ID);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			statement.setLong(1, validationRunId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			Set<RpkiRepository> rpkiRepositories = new HashSet<>();
+			Set<Long> rpkiRepositories = new HashSet<>();
 			while (rs.next()) {
 				RpkiRepositoryDbObject rpkiRepository = new RpkiRepositoryDbObject(rs);
-				loadRelatedObjects(rpkiRepository, connection);
-				rpkiRepositories.add(rpkiRepository);
+				rpkiRepositories.add(rpkiRepository.getId());
 			}
 			return rpkiRepositories;
 		}
@@ -202,6 +203,27 @@ public class RpkiRepositoryModel {
 				statement.setNull(1, Types.NUMERIC);
 			}
 			statement.setLong(2, rpkiRepository.getId());
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			return statement.executeUpdate();
+		}
+	}
+
+	/**
+	 * Delete the {@link RpkiRepository}s related to a TAL ID
+	 * 
+	 * @param talId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	public static int deleteByTalId(Long talId, Connection connection) throws SQLException {
+		List<Long> rpkiRepositories = getRelatedIdsByTalId(talId, connection);
+		for (Long rpkiRepositoryId : rpkiRepositories) {
+			RpkiObjectModel.deleteByRpkiRepositoryId(rpkiRepositoryId, connection);
+		}
+		String query = getQueryGroup().getQuery(DELETE_BY_TAL_ID);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setLong(1, talId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			return statement.executeUpdate();
 		}
@@ -304,6 +326,28 @@ public class RpkiRepositoryModel {
 			RpkiRepositoryDbObject found = new RpkiRepositoryDbObject(resultSet);
 			loadRelatedObjects(found, connection);
 			return found;
+		}
+	}
+
+	/**
+	 * Get the list of Rpki repositories IDs related to a TAL ID
+	 * 
+	 * @param talId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static List<Long> getRelatedIdsByTalId(Long talId, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
+		try (PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setLong(1, talId);
+			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+			ResultSet rs = statement.executeQuery();
+			List<Long> rpkiRepositories = new ArrayList<>();
+			while (rs.next()) {
+				rpkiRepositories.add(rs.getLong("rpr_id"));
+			}
+			return rpkiRepositories;
 		}
 	}
 

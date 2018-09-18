@@ -2,7 +2,6 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
@@ -43,7 +42,12 @@ public class ValidationRunDAOImpl implements ValidationRunDAO {
 						new ValidationError(ValidationRun.OBJECT_NAME, ValidationErrorType.OBJECT_NOT_EXISTS));
 			}
 			int updated = ValidationRunModel.completeValidation(validationRun, connection);
-			return updated > 0;
+			if (updated > 0) {
+				// And remove the older ones
+				ValidationRunModel.deleteOldValidationRuns(validationRun, connection);
+				return true;
+			}
+			return false;
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
@@ -62,15 +66,6 @@ public class ValidationRunDAOImpl implements ValidationRunDAO {
 	public List<ValidationRun> findAll() throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return ValidationRunModel.getAll(null, connection);
-		} catch (SQLException e) {
-			throw new ApiDataAccessException(e);
-		}
-	}
-
-	@Override
-	public long removeOldValidationRuns(Instant completedBefore) throws ApiDataAccessException {
-		try (Connection connection = DatabaseSession.getConnection()) {
-			return ValidationRunModel.deleteOldValidationRuns(completedBefore, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

@@ -28,6 +28,11 @@ select ero_id,
   from encoded_rpki_object
  where rpo_id = ?;
 
+#getRpkiRepositoryRelation
+select rpr_id, rpo_id
+  from rpki_repository_rpki_object
+ where rpo_id = ?;
+
 #getValidatedByValidationRunId
 select r.rpo_id,
        r.rpo_updated_at,
@@ -43,10 +48,6 @@ select r.rpo_id,
   join validation_run_validated_objects v on v.rpo_id = r.rpo_id
  where v.var_id = ?;
 
-#getLastId
-select max(rpo_id)
-  from rpki_object;
-
 #exist
 select 1
   from rpki_object
@@ -55,7 +56,6 @@ select 1
 
 #create
 insert into rpki_object (
-       rpo_id,
        rpo_updated_at,
        rpo_type,
        rpo_serial_number,
@@ -65,7 +65,7 @@ insert into rpki_object (
        rpo_subject_key_identifier,
        rpo_sha256,
        rpo_is_ca)
-values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+values (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 #delete
 delete from rpki_object where rpo_id = ?;
@@ -88,3 +88,14 @@ select max(ero_id)
 #createLocation
 insert into rpki_object_locations (rpo_id, rpo_locations)
 values (?, ?);
+
+#createRpkiRepositoryRelation
+insert into rpki_repository_rpki_object (rpr_id, rpo_id)
+values (?, ?);
+
+#deleteByRpkiRepositoryId
+delete from rpki_object
+ where rpo_id in (
+   select rpo_id
+     from rpki_repository_rpki_object
+    where rpr_id = ?);

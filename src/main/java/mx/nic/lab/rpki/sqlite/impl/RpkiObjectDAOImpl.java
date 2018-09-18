@@ -139,4 +139,14 @@ public class RpkiObjectDAOImpl implements RpkiObjectDAO {
 		}
 	}
 
+	@Override
+	public boolean addRpkiRepository(RpkiObject rpkiObject, Long rpkiRepositoryId) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			int added = RpkiObjectModel.addRpkiRepository(rpkiObject.getId(), rpkiRepositoryId, connection);
+			return added > 0;
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
 }

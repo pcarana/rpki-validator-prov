@@ -2,11 +2,8 @@
 -- Table TAL
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS tal (
-  tal_id INTEGER NOT NULL,
-  tal_last_sync TEXT NULL,
+  tal_id INTEGER,
   tal_public_key TEXT NULL,
-  tal_sync_status TEXT NOT NULL,
-  tal_validation_status TEXT NOT NULL,
   tal_name TEXT NULL,
   tal_loaded_cer BLOB NULL,
   PRIMARY KEY (tal_id));
@@ -17,14 +14,11 @@ CREATE TABLE IF NOT EXISTS tal (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS tal_uri (
   tau_id INTEGER NOT NULL,
-  tal_id INTEGER NOT NULL,
+  tal_id INTEGER,
   tau_location TEXT NOT NULL,
   PRIMARY KEY (tau_id),
-  CONSTRAINT tal_tal_id
-    FOREIGN KEY (tal_id)
-    REFERENCES TAL (tal_id)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION);
+  FOREIGN KEY (tal_id) REFERENCES TAL (tal_id) ON DELETE CASCADE
+);
 
 CREATE INDEX IF NOT EXISTS tal_uri_tal_id_idx ON TAL_URI (tal_id ASC);
 
@@ -44,17 +38,17 @@ CREATE INDEX IF NOT EXISTS rpki_repository__parent_repository_id_idx ON rpki_rep
 
 
 CREATE TABLE IF NOT EXISTS rpki_repository_trust_anchors (
-    rpr_id INTEGER NOT NULL,
-    tal_id INTEGER NOT NULL,
-    CONSTRAINT rpki_repository_trust_anchors__pk PRIMARY KEY (rpr_id, tal_id),
-    CONSTRAINT rpki_repository_trust_anchors__trust_anchor_fk FOREIGN KEY (tal_id) REFERENCES trust_anchor (tal_id) ON DELETE RESTRICT,
-    CONSTRAINT rpki_repository_trust_anchors__rpki_repository_fk FOREIGN KEY (rpr_id) REFERENCES rpki_repository (rpr_id) ON DELETE RESTRICT
+    rpr_id INTEGER,
+    tal_id INTEGER,
+    PRIMARY KEY (rpr_id, tal_id),
+    FOREIGN KEY (tal_id) REFERENCES tal (tal_id) ON DELETE CASCADE,
+    FOREIGN KEY (rpr_id) REFERENCES rpki_repository (rpr_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS rpki_repository_trust_anchors__trust_anchor_id_idx ON rpki_repository_trust_anchors (tal_id ASC);
 
 
 CREATE TABLE IF NOT EXISTS rpki_object (
-    rpo_id INTEGER NOT NULL,
+    rpo_id INTEGER,
     rpo_updated_at TEXT NOT NULL,
     rpo_type TEXT NOT NULL,
     rpo_serial_number BLOB,
@@ -64,7 +58,7 @@ CREATE TABLE IF NOT EXISTS rpki_object (
     rpo_subject_key_identifier BLOB,
     rpo_sha256 BLOB NOT NULL,
     rpo_is_ca INTEGER NOT NULL,
-    CONSTRAINT rpki_object__pk PRIMARY KEY (rpo_id)
+    PRIMARY KEY (rpo_id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS rpki_object__sha256_idx ON rpki_object (rpo_sha256 ASC);
 CREATE INDEX IF NOT EXISTS rpki_object__authority_key_identifier_idx ON rpki_object (rpo_authority_key_identifier ASC, rpo_type ASC, rpo_serial_number DESC, rpo_signing_time DESC, rpo_id DESC);
@@ -72,10 +66,19 @@ CREATE INDEX IF NOT EXISTS rpki_object__subject_key_identifier_idx ON rpki_objec
 
 
 CREATE TABLE IF NOT EXISTS rpki_object_locations (
-    rpo_id INTEGER NOT NULL,
+    rpo_id INTEGER,
     rpo_locations TEXT NOT NULL,
-    CONSTRAINT rpki_object_locations__pk PRIMARY KEY (rpo_id, rpo_locations),
-    CONSTRAINT rpki_object_locations__rpki_object_fk FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
+    PRIMARY KEY (rpo_id, rpo_locations),
+    FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS rpki_repository_rpki_object (
+    rpr_id INTEGER,
+    rpo_id INTEGER,
+    PRIMARY KEY (rpr_id, rpo_id),
+    FOREIGN KEY (rpr_id) REFERENCES rpki_repository (rpr_id) ON DELETE CASCADE,
+    FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
 );
 
 
@@ -84,9 +87,9 @@ CREATE TABLE IF NOT EXISTS encoded_rpki_object (
     ero_updated_at TEXT NOT NULL,
     rpo_id INTEGER,
     ero_encoded BLOB NOT NULL,
-    CONSTRAINT encoded_rpki_object__pk PRIMARY KEY (ero_id),
-    CONSTRAINT encoded_rpki_object__rpki_object_id_unique UNIQUE (rpo_id ASC),
-    CONSTRAINT encoded_rpki_object__rpki_object_id_fk FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
+    PRIMARY KEY (ero_id),
+    UNIQUE (rpo_id ASC),
+    FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
 );
 
 
@@ -99,14 +102,15 @@ CREATE TABLE IF NOT EXISTS validation_run (
     tal_id INTEGER,
     var_tal_certificate_uri TEXT,
     PRIMARY KEY (var_id),
-    FOREIGN KEY (tal_id) REFERENCES tal (tal_id) ON DELETE RESTRICT
+    FOREIGN KEY (tal_id) REFERENCES tal (tal_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS validation_run__trust_anchor_id_idx ON validation_run (tal_id ASC);
+
 
 CREATE TABLE IF NOT EXISTS validation_check (
     vac_id INTEGER,
     vac_updated_at TEXT NOT NULL,
-    var_id INTEGER NOT NULL,
+    var_id INTEGER,
     vac_location TEXT NOT NULL,
     vac_status TEXT NOT NULL,
     vac_key TEXT NOT NULL,
@@ -126,21 +130,21 @@ CREATE TABLE IF NOT EXISTS validation_check_parameters (
 
 
 CREATE TABLE IF NOT EXISTS validation_run_validated_objects (
-    var_id INTEGER NOT NULL,
-    rpo_id INTEGER NOT NULL,
-    CONSTRAINT validation_run_validated_objects__pk PRIMARY KEY (var_id, rpo_id),
-    CONSTRAINT validation_run_validated_objects__validation_run_fk FOREIGN KEY (var_id) REFERENCES validation_run (var_id) ON DELETE CASCADE,
-    CONSTRAINT validation_run_validated_objects__rpki_object_fk FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
+    var_id INTEGER,
+    rpo_id INTEGER,
+    PRIMARY KEY (var_id, rpo_id),
+    FOREIGN KEY (var_id) REFERENCES validation_run (var_id) ON DELETE CASCADE,
+    FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS validation_run_validated_objects__rpki_object_idx ON validation_run_validated_objects (rpo_id);
 
 
 CREATE TABLE IF NOT EXISTS validation_run_rpki_repositories (
-    var_id INTEGER NOT NULL,
-    rpr_id INTEGER NOT NULL,
-    CONSTRAINT validation_run_rpki_repositories__pk PRIMARY KEY (var_id, rpr_id),
-    CONSTRAINT validation_run_rpki_repositories__validation_run_fk FOREIGN KEY (var_id) REFERENCES validation_run (var_id) ON DELETE CASCADE,
-    CONSTRAINT validation_run_rpki_repositories__rpki_repository_fk FOREIGN KEY (rpr_id) REFERENCES rpki_repository (rpr_id) ON DELETE CASCADE
+    var_id INTEGER,
+    rpr_id INTEGER,
+    PRIMARY KEY (var_id, rpr_id),
+    FOREIGN KEY (var_id) REFERENCES validation_run (var_id) ON DELETE CASCADE,
+    FOREIGN KEY (rpr_id) REFERENCES rpki_repository (rpr_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS validation_run_rpki_repositories__rpki_repository_idx ON validation_run_rpki_repositories (rpr_id);
 

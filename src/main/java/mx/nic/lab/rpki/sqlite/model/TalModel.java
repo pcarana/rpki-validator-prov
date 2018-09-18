@@ -186,6 +186,8 @@ public class TalModel {
 	 * @throws SQLException
 	 */
 	public static int delete(Tal tal, Connection connection) throws SQLException {
+		// Delete the related repositories and objects
+		RpkiRepositoryModel.deleteByTalId(tal.getId(), connection);
 		String query = getQueryGroup().getQuery(DELETE);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			statement.setLong(1, tal.getId());
