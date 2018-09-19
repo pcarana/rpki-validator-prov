@@ -1,6 +1,5 @@
 #getBy
 select rpo_id,
-       rpo_updated_at,
        rpo_type,
        rpo_serial_number,
        rpo_signing_time,
@@ -40,7 +39,6 @@ select 1
 
 #create
 insert into rpki_object (
-       rpo_updated_at,
        rpo_type,
        rpo_serial_number,
        rpo_signing_time,
@@ -49,7 +47,7 @@ insert into rpki_object (
        rpo_subject_key_identifier,
        rpo_sha256,
        rpo_is_ca)
-values (?, ?, ?, ?, ?, ?, ?, ?, ?);
+values (?, ?, ?, ?, ?, ?, ?, ?);
 
 #delete
 delete from rpki_object where rpo_id = ?;

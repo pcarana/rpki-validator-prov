@@ -46,7 +46,6 @@ CREATE INDEX IF NOT EXISTS rpki_repository_trust_anchors__trust_anchor_id_idx ON
 -- Table RPKI_OBJECT
 CREATE TABLE IF NOT EXISTS rpki_object (
     rpo_id INTEGER,
-    rpo_updated_at TEXT NOT NULL,
     rpo_type TEXT NOT NULL,
     rpo_serial_number BLOB,
     rpo_signing_time INTEGER,
@@ -110,7 +109,6 @@ CREATE INDEX IF NOT EXISTS validation_run__trust_anchor_id_idx ON validation_run
 -- Table VALIDATION_CHECK
 CREATE TABLE IF NOT EXISTS validation_check (
     vac_id INTEGER,
-    vac_updated_at TEXT NOT NULL,
     var_id INTEGER,
     vac_location TEXT NOT NULL,
     vac_status TEXT NOT NULL,

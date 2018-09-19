@@ -4,7 +4,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +14,6 @@ import mx.nic.lab.rpki.db.pojo.ValidationCheck;
 public class ValidationCheckDbObject extends ValidationCheck implements DatabaseObject {
 
 	public static final String ID_COLUMN = "vac_id";
-	public static final String UPDATED_AT_COLUMN = "vac_updated_at";
 	public static final String VALIDATION_RUN_COLUMN = "var_id";
 	public static final String LOCATION_COLUMN = "vac_location";
 	public static final String STATUS_COLUMN = "vac_status";
@@ -28,7 +26,6 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 
 	public ValidationCheckDbObject(ValidationCheck validationCheck) {
 		this.setId(validationCheck.getId());
-		this.setUpdatedAt(validationCheck.getUpdatedAt());
 		this.setValidationRunId(validationCheck.getValidationRunId());
 		this.setLocation(validationCheck.getLocation());
 		this.setStatus(validationCheck.getStatus());
@@ -47,7 +44,6 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 		if (resultSet.wasNull()) {
 			setId(null);
 		}
-		setUpdatedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
 		setValidationRunId(resultSet.getLong(VALIDATION_RUN_COLUMN));
 		if (resultSet.wasNull()) {
 			setValidationRunId(null);
@@ -59,27 +55,25 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		// updatedAt
-		statement.setString(1, Instant.now().toString());
 		if (getValidationRunId() != null) {
-			statement.setLong(2, getValidationRunId());
+			statement.setLong(1, getValidationRunId());
 		} else {
-			statement.setNull(2, Types.NUMERIC);
+			statement.setNull(1, Types.NUMERIC);
 		}
 		if (getLocation() != null) {
-			statement.setString(3, getLocation());
+			statement.setString(2, getLocation());
+		} else {
+			statement.setNull(2, Types.VARCHAR);
+		}
+		if (getStatus() != null) {
+			statement.setString(3, getStatus().toString());
 		} else {
 			statement.setNull(3, Types.VARCHAR);
 		}
-		if (getStatus() != null) {
-			statement.setString(4, getStatus().toString());
+		if (getKey() != null) {
+			statement.setString(4, getKey());
 		} else {
 			statement.setNull(4, Types.VARCHAR);
-		}
-		if (getKey() != null) {
-			statement.setString(5, getKey());
-		} else {
-			statement.setNull(5, Types.VARCHAR);
 		}
 	}
 

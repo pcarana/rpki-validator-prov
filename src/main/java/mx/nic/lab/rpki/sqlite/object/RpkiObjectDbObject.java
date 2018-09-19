@@ -5,7 +5,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +17,6 @@ import mx.nic.lab.rpki.db.pojo.RpkiObject;
 public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 
 	public static final String ID_COLUMN = "rpo_id";
-	public static final String UPDATED_AT_COLUMN = "rpo_updated_at";
 	public static final String TYPE_COLUMN = "rpo_type";
 	public static final String SERIAL_NUMBER_COLUMN = "rpo_serial_number";
 	public static final String SIGNING_TIME_COLUMN = "rpo_signing_time";
@@ -35,7 +33,6 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 	static {
 		propertyToColumnMap = new HashMap<>();
 		propertyToColumnMap.put(ID, ID_COLUMN);
-		propertyToColumnMap.put(UPDATED_AT, UPDATED_AT_COLUMN);
 		propertyToColumnMap.put(TYPE, TYPE_COLUMN);
 		propertyToColumnMap.put(SERIAL_NUMBER, SERIAL_NUMBER_COLUMN);
 		propertyToColumnMap.put(SIGNING_TIME, SIGNING_TIME_COLUMN);
@@ -52,7 +49,6 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 
 	public RpkiObjectDbObject(RpkiObject rpkiObject) {
 		this.setId(rpkiObject.getId());
-		this.setUpdatedAt(rpkiObject.getUpdatedAt());
 		this.setType(rpkiObject.getType());
 		this.setSerialNumber(rpkiObject.getSerialNumber());
 		this.setSigningTime(rpkiObject.getSigningTime());
@@ -80,7 +76,6 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 		if (resultSet.wasNull()) {
 			setId(null);
 		}
-		setUpdatedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
 		setType(DatabaseObject.getStringAsEnum(Type.class, resultSet.getString(TYPE_COLUMN)));
 		tempBytes = resultSet.getBytes(SERIAL_NUMBER_COLUMN);
 		if (resultSet.wasNull()) {
@@ -108,44 +103,42 @@ public class RpkiObjectDbObject extends RpkiObject implements DatabaseObject {
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		// updatedAt
-		statement.setString(1, Instant.now().toString());
 		if (getType() != null) {
-			statement.setString(2, getType().toString());
+			statement.setString(1, getType().toString());
 		} else {
-			statement.setNull(2, Types.VARCHAR);
+			statement.setNull(1, Types.VARCHAR);
 		}
 		if (getSerialNumber() != null) {
-			statement.setBytes(3, getSerialNumber().toByteArray());
+			statement.setBytes(2, getSerialNumber().toByteArray());
 		} else {
-			statement.setNull(3, Types.BLOB);
+			statement.setNull(2, Types.BLOB);
 		}
 		if (getSigningTime() != null) {
-			statement.setString(4, getSigningTime().toString());
+			statement.setString(3, getSigningTime().toString());
+		} else {
+			statement.setNull(3, Types.VARCHAR);
+		}
+		if (getLastMarkedReachableAt() != null) {
+			statement.setString(4, getLastMarkedReachableAt().toString());
 		} else {
 			statement.setNull(4, Types.VARCHAR);
 		}
-		if (getLastMarkedReachableAt() != null) {
-			statement.setString(5, getLastMarkedReachableAt().toString());
-		} else {
-			statement.setNull(5, Types.VARCHAR);
-		}
 		if (getAuthorityKeyIdentifier() != null) {
-			statement.setBytes(6, getAuthorityKeyIdentifier());
+			statement.setBytes(5, getAuthorityKeyIdentifier());
+		} else {
+			statement.setNull(5, Types.BLOB);
+		}
+		if (getSubjectKeyIdentifier() != null) {
+			statement.setBytes(6, getSubjectKeyIdentifier());
 		} else {
 			statement.setNull(6, Types.BLOB);
 		}
-		if (getSubjectKeyIdentifier() != null) {
-			statement.setBytes(7, getSubjectKeyIdentifier());
+		if (getSha256() != null) {
+			statement.setBytes(7, getSha256());
 		} else {
 			statement.setNull(7, Types.BLOB);
 		}
-		if (getSha256() != null) {
-			statement.setBytes(8, getSha256());
-		} else {
-			statement.setNull(8, Types.BLOB);
-		}
-		statement.setBoolean(9, isCa());
+		statement.setBoolean(8, isCa());
 	}
 
 	@Override

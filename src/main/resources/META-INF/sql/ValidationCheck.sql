@@ -1,6 +1,5 @@
 #getByValidationRunId
 select vac_id,
-       vac_updated_at,
        var_id,
        vac_location,
        vac_status,
@@ -20,12 +19,11 @@ select max(vcp_id)
 
 #create
 insert into validation_check (
-       vac_updated_at,
        var_id,
        vac_location,
        vac_status,
        vac_key)
-values (?, ?, ?, ?, ?);
+values (?, ?, ?, ?);
 
 #createParameter
 insert into validation_check_parameters (
@@ -36,7 +34,6 @@ values (?, ?, ?);
 
 #getByUnique
 select vac_id,
-       vac_updated_at,
        var_id,
        vac_location,
        vac_status,
