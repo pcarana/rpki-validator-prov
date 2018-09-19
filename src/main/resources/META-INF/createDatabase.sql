@@ -84,7 +84,6 @@ CREATE TABLE IF NOT EXISTS rpki_repository_rpki_object (
 -- Table ENCODED_RPKI_OBJECT
 CREATE TABLE IF NOT EXISTS encoded_rpki_object (
     ero_id INTEGER NOT NULL,
-    ero_updated_at TEXT NOT NULL,
     rpo_id INTEGER,
     ero_encoded BLOB NOT NULL,
     PRIMARY KEY (ero_id),

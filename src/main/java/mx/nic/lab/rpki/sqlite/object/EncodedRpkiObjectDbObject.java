@@ -4,7 +4,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +14,6 @@ import mx.nic.lab.rpki.db.pojo.EncodedRpkiObject;
 public class EncodedRpkiObjectDbObject extends EncodedRpkiObject implements DatabaseObject {
 
 	public static final String ID_COLUMN = "ero_id";
-	public static final String UPDATED_AT_COLUMN = "ero_updated_at";
 	public static final String RPKI_OBJECT_COLUMN = "rpo_id";
 	public static final String ENCODED_COLUMN = "ero_encoded";
 
@@ -27,7 +25,6 @@ public class EncodedRpkiObjectDbObject extends EncodedRpkiObject implements Data
 
 	public EncodedRpkiObjectDbObject(EncodedRpkiObject encodedRpkiObject) {
 		this.setId(encodedRpkiObject.getId());
-		this.setUpdatedAt(encodedRpkiObject.getUpdatedAt());
 		this.setRpkiObject(encodedRpkiObject.getRpkiObject());
 		this.setEncoded(encodedRpkiObject.getEncoded());
 		if (getRpkiObject() != null) {
@@ -47,7 +44,6 @@ public class EncodedRpkiObjectDbObject extends EncodedRpkiObject implements Data
 			setId(null);
 		}
 		setRpkiObjectId(resultSet.getLong(RPKI_OBJECT_COLUMN));
-		setUpdatedAt(DatabaseObject.getStringDateAsInstant(resultSet.getString(UPDATED_AT_COLUMN)));
 		setEncoded(resultSet.getBytes(ENCODED_COLUMN));
 		if (resultSet.wasNull()) {
 			setEncoded(null);
@@ -57,17 +53,15 @@ public class EncodedRpkiObjectDbObject extends EncodedRpkiObject implements Data
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
 		statement.setLong(1, getId());
-		// updatedAt
-		statement.setString(2, Instant.now().toString());
 		if (getRpkiObjectId() != null) {
-			statement.setLong(3, getRpkiObjectId());
+			statement.setLong(2, getRpkiObjectId());
 		} else {
-			statement.setNull(3, Types.NUMERIC);
+			statement.setNull(2, Types.NUMERIC);
 		}
 		if (getEncoded() != null) {
-			statement.setBytes(4, getEncoded());
+			statement.setBytes(3, getEncoded());
 		} else {
-			statement.setNull(4, Types.BLOB);
+			statement.setNull(3, Types.BLOB);
 		}
 	}
 

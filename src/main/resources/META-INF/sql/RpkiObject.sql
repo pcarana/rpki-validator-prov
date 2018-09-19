@@ -22,7 +22,6 @@ select rpo_locations
 
 #getEncodedByRpkiObjectId
 select ero_id,
-       ero_updated_at,
        rpo_id,
        ero_encoded
   from encoded_rpki_object
@@ -61,10 +60,9 @@ delete from rpki_object where rpo_last_marked_reachable_at < ?;
 #createEncodedRpkiObject
 insert into encoded_rpki_object (
        ero_id,
-       ero_updated_at,
        rpo_id,
        ero_encoded)
-values (?, ?, ?, ?);
+values (?, ?, ?);
 
 #getEncodedRpkiObjectLastId
 select max(ero_id)
