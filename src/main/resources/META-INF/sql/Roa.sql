@@ -97,7 +97,6 @@ select max(roa_id)
 #create
 insert into roa (
        rpo_id,
-       roa_id,
        roa_asn,
        roa_prefix_text,
        roa_start_prefix,
@@ -105,4 +104,19 @@ insert into roa (
        roa_prefix_length,
        roa_prefix_max_length,
        roa_prefix_family)
-values (?, ?, ?, ?, ?, ?, ?, ?, ?);
+values (?, ?, ?, ?, ?, ?, ?, ?);
+
+#getByUnique
+select rpo_id,
+       roa_id,
+       roa_asn,
+       roa_prefix_text,
+       roa_start_prefix,
+       roa_end_prefix,
+       roa_prefix_length,
+       roa_prefix_max_length,
+       roa_prefix_family
+  from roa
+ where 1 = 1
+ [and]
+ order by roa_id desc;

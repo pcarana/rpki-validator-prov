@@ -1,6 +1,4 @@
--- -----------------------------------------------------
 -- Table TAL
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS tal (
   tal_id INTEGER,
   tal_public_key TEXT NULL,
@@ -9,9 +7,7 @@ CREATE TABLE IF NOT EXISTS tal (
   PRIMARY KEY (tal_id));
 
 
--- -----------------------------------------------------
 -- Table TAL_URI
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS tal_uri (
   tau_id INTEGER NOT NULL,
   tal_id INTEGER,
@@ -23,6 +19,7 @@ CREATE TABLE IF NOT EXISTS tal_uri (
 CREATE INDEX IF NOT EXISTS tal_uri_tal_id_idx ON TAL_URI (tal_id ASC);
 
 
+-- Table RPKI_REPOSITORY
 CREATE TABLE IF NOT EXISTS rpki_repository (
     rpr_id INTEGER,
     rpr_updated_at TEXT NOT NULL,
@@ -31,12 +28,13 @@ CREATE TABLE IF NOT EXISTS rpki_repository (
     rpr_location_uri TEXT,
     rpr_parent_repository_id INTEGER,
     PRIMARY KEY (rpr_id),
-    CONSTRAINT rpki_repository__location_uri_unique UNIQUE (rpr_location_uri),
-    CONSTRAINT rpki_repository__parent_repository_fk FOREIGN KEY (rpr_parent_repository_id) REFERENCES rpki_repository (rpr_id) ON DELETE SET NULL
+    UNIQUE (rpr_location_uri),
+    FOREIGN KEY (rpr_parent_repository_id) REFERENCES rpki_repository (rpr_id) ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS rpki_repository__parent_repository_id_idx ON rpki_repository (rpr_parent_repository_id ASC);
 
 
+-- Table RPKI_REPOSITORY_TRUST_ANCHORS
 CREATE TABLE IF NOT EXISTS rpki_repository_trust_anchors (
     rpr_id INTEGER,
     tal_id INTEGER,
@@ -47,6 +45,7 @@ CREATE TABLE IF NOT EXISTS rpki_repository_trust_anchors (
 CREATE INDEX IF NOT EXISTS rpki_repository_trust_anchors__trust_anchor_id_idx ON rpki_repository_trust_anchors (tal_id ASC);
 
 
+-- Table RPKI_OBJECT
 CREATE TABLE IF NOT EXISTS rpki_object (
     rpo_id INTEGER,
     rpo_updated_at TEXT NOT NULL,
@@ -65,6 +64,7 @@ CREATE INDEX IF NOT EXISTS rpki_object__authority_key_identifier_idx ON rpki_obj
 CREATE INDEX IF NOT EXISTS rpki_object__subject_key_identifier_idx ON rpki_object (rpo_subject_key_identifier ASC);
 
 
+-- Table RPKI_OBJECT_LOCATIONS
 CREATE TABLE IF NOT EXISTS rpki_object_locations (
     rpo_id INTEGER,
     rpo_locations TEXT NOT NULL,
@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS rpki_object_locations (
 );
 
 
+-- Table RPKI_REPOSITORY_RPKI_OBJECT
 CREATE TABLE IF NOT EXISTS rpki_repository_rpki_object (
     rpr_id INTEGER,
     rpo_id INTEGER,
@@ -82,6 +83,7 @@ CREATE TABLE IF NOT EXISTS rpki_repository_rpki_object (
 );
 
 
+-- Table ENCODED_RPKI_OBJECT
 CREATE TABLE IF NOT EXISTS encoded_rpki_object (
     ero_id INTEGER NOT NULL,
     ero_updated_at TEXT NOT NULL,
@@ -93,6 +95,7 @@ CREATE TABLE IF NOT EXISTS encoded_rpki_object (
 );
 
 
+-- Table VALIDATION_RUN
 CREATE TABLE IF NOT EXISTS validation_run (
     var_id INTEGER,
     var_updated_at TEXT NOT NULL,
@@ -107,6 +110,7 @@ CREATE TABLE IF NOT EXISTS validation_run (
 CREATE INDEX IF NOT EXISTS validation_run__trust_anchor_id_idx ON validation_run (tal_id ASC);
 
 
+-- Table VALIDATION_CHECK
 CREATE TABLE IF NOT EXISTS validation_check (
     vac_id INTEGER,
     vac_updated_at TEXT NOT NULL,
@@ -120,15 +124,17 @@ CREATE TABLE IF NOT EXISTS validation_check (
 CREATE INDEX IF NOT EXISTS validation_check__validation_run_id_idx ON validation_check (var_id ASC, vac_id ASC);
 
 
+--Table VALIDATION_CHECK_PARAMETERS
 CREATE TABLE IF NOT EXISTS validation_check_parameters (
     vac_id INTEGER NOT NULL,
     vcp_id INTEGER NOT NULL,
     vcp_parameters TEXT NOT NULL,
-    CONSTRAINT validation_check_parameters__pk PRIMARY KEY (vac_id, vcp_id),
-    CONSTRAINT validation_check_parameters__validation_check_fk FOREIGN KEY (vac_id) REFERENCES validation_check (vac_id) ON DELETE CASCADE
+    PRIMARY KEY (vac_id, vcp_id),
+    FOREIGN KEY (vac_id) REFERENCES validation_check (vac_id) ON DELETE CASCADE
 );
 
 
+-- Table VALIDATION_RUN_VALIDATED_OBJECTS
 CREATE TABLE IF NOT EXISTS validation_run_validated_objects (
     var_id INTEGER,
     rpo_id INTEGER,
@@ -139,6 +145,7 @@ CREATE TABLE IF NOT EXISTS validation_run_validated_objects (
 CREATE INDEX IF NOT EXISTS validation_run_validated_objects__rpki_object_idx ON validation_run_validated_objects (rpo_id);
 
 
+-- Table VALIDATION_RUN_RPKI_REPOSITORIES
 CREATE TABLE IF NOT EXISTS validation_run_rpki_repositories (
     var_id INTEGER,
     rpr_id INTEGER,
@@ -149,12 +156,10 @@ CREATE TABLE IF NOT EXISTS validation_run_rpki_repositories (
 CREATE INDEX IF NOT EXISTS validation_run_rpki_repositories__rpki_repository_idx ON validation_run_rpki_repositories (rpr_id);
 
 
--- -----------------------------------------------------
 -- Table ROA
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS roa (
-  rpo_id INTEGER NOT NULL,
-  roa_id INTEGER NOT NULL,
+  rpo_id INTEGER,
+  roa_id INTEGER,
   roa_asn INTEGER NOT NULL,
   roa_prefix_text TEXT NOT NULL,
   roa_start_prefix BLOB NOT NULL,
@@ -162,16 +167,14 @@ CREATE TABLE IF NOT EXISTS roa (
   roa_prefix_length INTEGER NOT NULL,
   roa_prefix_max_length INTEGER NOT NULL,
   roa_prefix_family INTEGER NOT NULL CHECK (roa_prefix_family IN (4, 6)),
-  PRIMARY KEY (rpo_id, roa_id),
-  CONSTRAINT roa__rpki_object_fk FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE);
+  PRIMARY KEY (roa_id),
+  FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE);
 
 CREATE INDEX IF NOT EXISTS start_prefix_idx ON roa (roa_start_prefix ASC);
 CREATE INDEX IF NOT EXISTS end_prefix_idx ON roa (roa_end_prefix ASC);
 
 
--- -----------------------------------------------------
 -- Table GBR
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS gbr (
   gbr_id INTEGER,
   rpo_id INTEGER NOT NULL,
@@ -180,9 +183,7 @@ CREATE TABLE IF NOT EXISTS gbr (
   FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE);
 
 
--- -----------------------------------------------------
 -- Table SLURM_PREFIX
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS slurm_prefix (
   slp_id INTEGER NOT NULL,
   slp_asn INTEGER NULL,
@@ -196,9 +197,7 @@ CREATE TABLE IF NOT EXISTS slurm_prefix (
   PRIMARY KEY (slp_id));
 
 
--- -----------------------------------------------------
 -- Table SLURM_BGPSEC
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS slurm_bgpsec (
   slb_id INTEGER NOT NULL,
   slb_asn INTEGER NULL,

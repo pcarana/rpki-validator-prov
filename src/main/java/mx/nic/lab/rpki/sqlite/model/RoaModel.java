@@ -34,12 +34,12 @@ public class RoaModel {
 	// Queries IDs used by this model
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_BY_RPKI_OBJECT_ID = "getByRpkiObjectId";
+	private static final String GET_BY_UNIQUE = "getByUnique";
 	private static final String GET_ALL = "getAll";
 	private static final String FIND_EXACT_MATCH = "findExactMatch";
 	private static final String FIND_COVERING_AGGREGATE = "findCoveringAggregate";
 	private static final String FIND_MORE_SPECIFIC = "findMoreSpecific";
 	private static final String EXIST_ASN = "existAsn";
-	private static final String GET_LAST_ID = "getLastId";
 	private static final String CREATE = "create";
 
 	/**
@@ -234,8 +234,6 @@ public class RoaModel {
 	public static Long create(Roa newRoa, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			Long newId = getLastId(connection) + 1;
-			newRoa.setId(newId);
 			RoaDbObject stored = new RoaDbObject(newRoa);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
@@ -243,26 +241,9 @@ public class RoaModel {
 			if (created < 1) {
 				return null;
 			}
-			return newId;
-		}
-	}
-
-	/**
-	 * Get the last registered ID
-	 * 
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static Long getLastId(Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(GET_LAST_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			ResultSet rs = statement.executeQuery();
-			// First in the table
-			if (!rs.next()) {
-				return 0L;
-			}
-			return rs.getLong(1);
+			stored = getByUniqueFields(stored, connection);
+			newRoa.setId(stored.getId());
+			return newRoa.getId();
 		}
 	}
 
@@ -300,6 +281,100 @@ public class RoaModel {
 	private static void loadRelatedObjects(RoaDbObject roa, Connection connection) throws SQLException {
 		roa.setRpkiObject(RpkiObjectModel.getById(roa.getRpkiObjectId(), connection));
 		roa.setGbrs(GbrModel.getByRoa(roa, connection));
+	}
+
+	/**
+	 * Return a {@link PreparedStatement} that contains the necessary parameters to
+	 * make a search of a unique {@link Roa} based on properties distinct that the
+	 * ID
+	 * 
+	 * @param roa
+	 * @param queryId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static PreparedStatement prepareUniqueSearch(Roa roa, String queryId, Connection connection)
+			throws SQLException {
+		String query = getQueryGroup().getQuery(queryId);
+		StringBuilder parameters = new StringBuilder();
+		int currentIdx = 1;
+		int rpoIdIdx = -1;
+		int asnIdx = -1;
+		int startPrefixIdx = -1;
+		int endPrefixIdx = -1;
+		int prefixLengthIdx = -1;
+		int prefixMaxLengthIdx = -1;
+		int prefixFamilyIdx = -1;
+		if (roa.getRpkiObject() != null) {
+			parameters.append(" and ").append(RoaDbObject.RPKI_OBJECT_COLUMN).append(" = ? ");
+			rpoIdIdx = currentIdx++;
+		}
+		if (roa.getAsn() != null) {
+			parameters.append(" and ").append(RoaDbObject.ASN_COLUMN).append(" = ? ");
+			asnIdx = currentIdx++;
+		}
+		if (roa.getStartPrefix() != null) {
+			parameters.append(" and ").append(RoaDbObject.START_PREFIX_COLUMN).append(" = ? ");
+			startPrefixIdx = currentIdx++;
+		}
+		if (roa.getEndPrefix() != null) {
+			parameters.append(" and ").append(RoaDbObject.END_PREFIX_COLUMN).append(" = ? ");
+			endPrefixIdx = currentIdx++;
+		}
+		if (roa.getPrefixLength() != null) {
+			parameters.append(" and ").append(RoaDbObject.PREFIX_LENGTH_COLUMN).append(" = ? ");
+			prefixLengthIdx = currentIdx++;
+		}
+		if (roa.getPrefixMaxLength() != null) {
+			parameters.append(" and ").append(RoaDbObject.PREFIX_MAX_LENGTH_COLUMN).append(" = ? ");
+			prefixMaxLengthIdx = currentIdx++;
+		}
+		if (roa.getPrefixFamily() != null) {
+			parameters.append(" and ").append(RoaDbObject.PREFIX_FAMILY_COLUMN).append(" = ? ");
+			prefixFamilyIdx = currentIdx++;
+		}
+		query = query.replace("[and]", parameters.toString());
+		PreparedStatement statement = connection.prepareStatement(query);
+		if (rpoIdIdx > 0) {
+			statement.setLong(rpoIdIdx, roa.getRpkiObject().getId());
+		}
+		if (asnIdx > 0) {
+			statement.setLong(asnIdx, roa.getAsn());
+		}
+		if (startPrefixIdx > 0) {
+			statement.setBytes(startPrefixIdx, roa.getStartPrefix());
+		}
+		if (endPrefixIdx > 0) {
+			statement.setBytes(endPrefixIdx, roa.getEndPrefix());
+		}
+		if (prefixLengthIdx > 0) {
+			statement.setInt(prefixLengthIdx, roa.getPrefixLength());
+		}
+		if (prefixMaxLengthIdx > 0) {
+			statement.setInt(prefixMaxLengthIdx, roa.getPrefixMaxLength());
+		}
+		if (prefixFamilyIdx > 0) {
+			statement.setInt(prefixFamilyIdx, roa.getPrefixFamily());
+		}
+		return statement;
+	}
+
+	/**
+	 * Get a {@link Roa} by its unique fields
+	 * 
+	 * @param roa
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static RoaDbObject getByUniqueFields(Roa roa, Connection connection) throws SQLException {
+		try (PreparedStatement statement = prepareUniqueSearch(roa, GET_BY_UNIQUE, connection)) {
+			ResultSet resultSet = statement.executeQuery();
+			RoaDbObject found = new RoaDbObject(resultSet);
+			loadRelatedObjects(found, connection);
+			return found;
+		}
 	}
 
 	public static QueryGroup getQueryGroup() {

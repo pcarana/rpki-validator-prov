@@ -112,41 +112,40 @@ public class RoaDbObject extends Roa implements DatabaseObject {
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
 		statement.setLong(1, getRpkiObjectId());
-		statement.setLong(2, getId());
 		if (getAsn() != null) {
-			statement.setLong(3, getAsn());
+			statement.setLong(2, getAsn());
 		} else {
-			statement.setNull(3, Types.NUMERIC);
+			statement.setNull(2, Types.NUMERIC);
 		}
 		if (getPrefixText() != null) {
-			statement.setString(4, getPrefixText());
+			statement.setString(3, getPrefixText());
 		} else {
-			statement.setNull(4, Types.VARCHAR);
+			statement.setNull(3, Types.VARCHAR);
 		}
 		if (getStartPrefix() != null) {
-			statement.setBytes(5, getStartPrefix());
+			statement.setBytes(4, getStartPrefix());
+		} else {
+			statement.setNull(4, Types.BLOB);
+		}
+		if (getEndPrefix() != null) {
+			statement.setBytes(5, getEndPrefix());
 		} else {
 			statement.setNull(5, Types.BLOB);
 		}
-		if (getEndPrefix() != null) {
-			statement.setBytes(6, getEndPrefix());
-		} else {
-			statement.setNull(6, Types.BLOB);
-		}
 		if (getPrefixLength() != null) {
-			statement.setInt(7, getPrefixLength());
+			statement.setInt(6, getPrefixLength());
+		} else {
+			statement.setNull(6, Types.INTEGER);
+		}
+		if (getPrefixMaxLength() != null) {
+			statement.setInt(7, getPrefixMaxLength());
 		} else {
 			statement.setNull(7, Types.INTEGER);
 		}
-		if (getPrefixMaxLength() != null) {
-			statement.setInt(8, getPrefixMaxLength());
+		if (getPrefixFamily() != null) {
+			statement.setInt(8, getPrefixFamily());
 		} else {
 			statement.setNull(8, Types.INTEGER);
-		}
-		if (getPrefixFamily() != null) {
-			statement.setInt(9, getPrefixFamily());
-		} else {
-			statement.setNull(9, Types.INTEGER);
 		}
 	}
 
