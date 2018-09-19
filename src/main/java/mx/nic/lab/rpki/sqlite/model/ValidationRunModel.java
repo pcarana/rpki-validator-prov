@@ -141,8 +141,7 @@ public class ValidationRunModel {
 	}
 
 	/**
-	 * Delete the {@link ValidationRun}s that were completed before
-	 * the one received
+	 * Delete the {@link ValidationRun}s that were completed before the one received
 	 * 
 	 * @param validationRun
 	 * @param connection
@@ -246,11 +245,24 @@ public class ValidationRunModel {
 				createValidObjectsRelation(validationRun.getId(), rpkiObject.getId(), connection);
 			}
 		}
-		List<ValidationCheck> validationChecks = validationRun.getValidationChecks();
+		Set<ValidationCheck> validationChecks = validationRun.getValidationChecks();
 		if (validationChecks != null) {
 			for (ValidationCheck validationCheck : validationChecks) {
-				validationCheck.setValidationRun(validationRun);
-				ValidationCheckModel.create(validationCheck, connection);
+				// If a validation check with error/warning exist, ignore the passed checks at
+				// the same location
+				boolean create = true;
+				if (validationCheck.getStatus() == ValidationCheck.Status.PASSED) {
+					for (ValidationCheck check : validationChecks) {
+						if (!check.equals(validationCheck) && check.getLocation() == validationCheck.getLocation()) {
+							create = false;
+							break;
+						}
+					}
+				}
+				if (create) {
+					validationCheck.setValidationRunId(validationRun.getId());
+					ValidationCheckModel.create(validationCheck, connection);
+				}
 			}
 		}
 	}

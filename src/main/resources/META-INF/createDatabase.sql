@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS validation_check (
     var_id INTEGER,
     vac_location TEXT NOT NULL,
     vac_status TEXT NOT NULL,
-    vac_key TEXT NOT NULL,
+    vac_key TEXT,
     PRIMARY KEY (vac_id),
     FOREIGN KEY (var_id) REFERENCES validation_run (var_id) ON DELETE CASCADE
 );

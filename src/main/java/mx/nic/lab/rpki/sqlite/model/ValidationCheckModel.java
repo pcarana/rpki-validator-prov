@@ -6,7 +6,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,14 +89,14 @@ public class ValidationCheckModel {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static List<ValidationCheck> getByValidationRunId(Long validationRunId, Connection connection)
+	public static Set<ValidationCheck> getByValidationRunId(Long validationRunId, Connection connection)
 			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_VALIDATION_RUN_ID);
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			statement.setLong(1, validationRunId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			ResultSet rs = statement.executeQuery();
-			List<ValidationCheck> validationChecks = new ArrayList<>();
+			Set<ValidationCheck> validationChecks = new HashSet<>();
 			while (rs.next()) {
 				ValidationCheckDbObject validationCheck = new ValidationCheckDbObject(rs);
 				loadRelatedObjects(validationCheck, connection);
@@ -123,7 +125,7 @@ public class ValidationCheckModel {
 		int varIdIdx = -1;
 		int locationIdx = -1;
 		int keyIdx = -1;
-		if (validationCheck.getValidationRun() != null) {
+		if (validationCheck.getValidationRunId() != null) {
 			parameters.append(" and ").append(ValidationCheckDbObject.VALIDATION_RUN_COLUMN).append(" = ? ");
 			varIdIdx = currentIdx++;
 		}
@@ -138,7 +140,7 @@ public class ValidationCheckModel {
 		query = query.replace("[and]", parameters.toString());
 		PreparedStatement statement = connection.prepareStatement(query);
 		if (varIdIdx > 0) {
-			statement.setLong(varIdIdx, validationCheck.getValidationRun().getId());
+			statement.setLong(varIdIdx, validationCheck.getValidationRunId());
 		}
 		if (locationIdx > 0) {
 			statement.setString(locationIdx, validationCheck.getLocation());

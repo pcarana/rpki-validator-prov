@@ -22,8 +22,6 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 	public static final String KEY_COLUMN = "vac_key";
 	public static final String PARAMETERS_COLUMN = "vcp_parameters";
 
-	private Long validationRunId;
-
 	public ValidationCheckDbObject() {
 		super();
 	}
@@ -31,14 +29,11 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 	public ValidationCheckDbObject(ValidationCheck validationCheck) {
 		this.setId(validationCheck.getId());
 		this.setUpdatedAt(validationCheck.getUpdatedAt());
-		this.setValidationRun(validationCheck.getValidationRun());
+		this.setValidationRunId(validationCheck.getValidationRunId());
 		this.setLocation(validationCheck.getLocation());
 		this.setStatus(validationCheck.getStatus());
 		this.setKey(validationCheck.getKey());
 		this.setParameters(validationCheck.getParameters());
-		if (getValidationRun() != null) {
-			this.setValidationRunId(getValidationRun().getId());
-		}
 	}
 
 	public ValidationCheckDbObject(ResultSet resultSet) throws SQLException {
@@ -97,13 +92,5 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 		if (!validationErrors.isEmpty()) {
 			throw new ValidationException(validationErrors);
 		}
-	}
-
-	public Long getValidationRunId() {
-		return validationRunId;
-	}
-
-	public void setValidationRunId(Long validationRunId) {
-		this.validationRunId = validationRunId;
 	}
 }
