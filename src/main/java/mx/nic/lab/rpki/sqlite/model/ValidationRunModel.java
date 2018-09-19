@@ -12,7 +12,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
-import mx.nic.lab.rpki.db.pojo.RpkiObject;
 import mx.nic.lab.rpki.db.pojo.RpkiRepository;
 import mx.nic.lab.rpki.db.pojo.ValidationCheck;
 import mx.nic.lab.rpki.db.pojo.ValidationRun;
@@ -42,7 +41,6 @@ public class ValidationRunModel {
 	private static final String GET_BY_TAL_ID = "getByTalId";
 	private static final String CREATE = "create";
 	private static final String CREATE_REPOSITORY_RELATION = "createRepositoryRelation";
-	private static final String CREATE_RPKI_OBJ_RELATION = "createValidObjectsRelation";
 	private static final String DELETE_OLD = "deleteOld";
 	private static final String UPDATE = "update";
 
@@ -216,8 +214,6 @@ public class ValidationRunModel {
 	private static void loadRelatedObjects(ValidationRunDbObject validationRun, Connection connection)
 			throws SQLException {
 		validationRun.setRpkiRepositories(RpkiRepositoryModel.getByValidationRunId(validationRun.getId(), connection));
-		validationRun
-				.setValidatedObjects(RpkiObjectModel.getValidatedByValidationRunId(validationRun.getId(), connection));
 		validationRun.setValidationChecks(ValidationCheckModel.getByValidationRunId(validationRun.getId(), connection));
 	}
 
@@ -229,20 +225,11 @@ public class ValidationRunModel {
 	 * @throws SQLException
 	 */
 	private static void storeRelatedObjects(ValidationRun validationRun, Connection connection) throws SQLException {
-		// FIXME @pcarana What to do with validationRun.getRpkiObjects()
-		// validationRun.getRpkiObjects()
 		Set<Long> rpkiRepositories = validationRun.getRpkiRepositories();
 		if (rpkiRepositories != null) {
 			for (Long rpkiRepositoryId : rpkiRepositories) {
 				// The rpkiRepository is already stored at DB
 				createRepositoriesRelation(validationRun.getId(), rpkiRepositoryId, connection);
-			}
-		}
-		Set<RpkiObject> rpkiObjects = validationRun.getValidatedObjects();
-		if (rpkiObjects != null) {
-			for (RpkiObject rpkiObject : rpkiObjects) {
-				// The rpkiObject is already stored at DB
-				createValidObjectsRelation(validationRun.getId(), rpkiObject.getId(), connection);
 			}
 		}
 		Set<ValidationCheck> validationChecks = validationRun.getValidationChecks();
@@ -284,29 +271,6 @@ public class ValidationRunModel {
 		try (PreparedStatement statement = connection.prepareStatement(query)) {
 			statement.setLong(1, validationRunId);
 			statement.setLong(2, rpkiRepositoryId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
-			return created > 0;
-		}
-	}
-
-	/**
-	 * Creates a new relation between {@link ValidationRun} and {@link RpkiObject}
-	 * returns false if the relation couldn't be created.
-	 * 
-	 * @param validationRunId
-	 * @param rpkiObjectId
-	 * @param connection
-	 * @return <code>boolean</code> to indicate if the relation was successfully
-	 *         created
-	 * @throws SQLException
-	 */
-	private static boolean createValidObjectsRelation(Long validationRunId, Long rpkiObjectId, Connection connection)
-			throws SQLException {
-		String query = getQueryGroup().getQuery(CREATE_RPKI_OBJ_RELATION);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			statement.setLong(1, validationRunId);
-			statement.setLong(2, rpkiObjectId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			int created = statement.executeUpdate();
 			return created > 0;

@@ -34,10 +34,6 @@ update validation_run
 insert into validation_run_rpki_repositories (var_id, rpr_id)
 values (?, ?);
 
-#createValidObjectsRelation
-insert into validation_run_validated_objects (var_id, rpo_id)
-values (?, ?);
-
 #deleteOld
 delete from validation_run
  where var_id < ?

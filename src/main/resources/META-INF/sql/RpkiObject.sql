@@ -33,21 +33,6 @@ select rpr_id, rpo_id
   from rpki_repository_rpki_object
  where rpo_id = ?;
 
-#getValidatedByValidationRunId
-select r.rpo_id,
-       r.rpo_updated_at,
-       r.rpo_type,
-       r.rpo_serial_number,
-       r.rpo_signing_time,
-       r.rpo_last_marked_reachable_at,
-       r.rpo_authority_key_identifier,
-       r.rpo_subject_key_identifier,
-       r.rpo_sha256,
-       r.rpo_is_ca
-  from rpki_object r
-  join validation_run_validated_objects v on v.rpo_id = r.rpo_id
- where v.var_id = ?;
-
 #exist
 select 1
   from rpki_object

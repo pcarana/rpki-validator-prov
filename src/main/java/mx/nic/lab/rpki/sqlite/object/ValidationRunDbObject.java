@@ -25,7 +25,8 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 	public static final String TAL_CERTIFICATE_URI_COLUMN = "var_tal_certificate_uri";
 
 	/**
-	 * Mapping of the {@link ValidationRun} properties to its corresponding DB column
+	 * Mapping of the {@link ValidationRun} properties to its corresponding DB
+	 * column
 	 */
 	public static final Map<String, String> propertyToColumnMap;
 	static {
@@ -52,8 +53,6 @@ public class ValidationRunDbObject extends ValidationRun implements DatabaseObje
 		this.setTalId(validationRun.getTalId());
 		this.setTalCertificateURI(validationRun.getTalCertificateURI());
 		this.setRpkiRepositories(validationRun.getRpkiRepositories());
-		this.setRpkiObjects(validationRun.getRpkiObjects());
-		this.setValidatedObjects(validationRun.getValidatedObjects());
 		this.setValidationChecks(validationRun.getValidationChecks());
 	}
 

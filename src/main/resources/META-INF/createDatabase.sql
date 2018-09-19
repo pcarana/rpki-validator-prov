@@ -134,17 +134,6 @@ CREATE TABLE IF NOT EXISTS validation_check_parameters (
 );
 
 
--- Table VALIDATION_RUN_VALIDATED_OBJECTS
-CREATE TABLE IF NOT EXISTS validation_run_validated_objects (
-    var_id INTEGER,
-    rpo_id INTEGER,
-    PRIMARY KEY (var_id, rpo_id),
-    FOREIGN KEY (var_id) REFERENCES validation_run (var_id) ON DELETE CASCADE,
-    FOREIGN KEY (rpo_id) REFERENCES rpki_object (rpo_id) ON DELETE CASCADE
-);
-CREATE INDEX IF NOT EXISTS validation_run_validated_objects__rpki_object_idx ON validation_run_validated_objects (rpo_id);
-
-
 -- Table VALIDATION_RUN_RPKI_REPOSITORIES
 CREATE TABLE IF NOT EXISTS validation_run_rpki_repositories (
     var_id INTEGER,

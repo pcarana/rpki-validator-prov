@@ -47,7 +47,6 @@ public class RpkiObjectModel {
 	private static final String GET_LOCATIONS = "getLocations";
 	private static final String GET_ENCODED_BY_OBJECT_ID = "getEncodedByRpkiObjectId";
 	private static final String GET_RPKI_REPO_REL = "getRpkiRepositoryRelation";
-	private static final String GET_VALIDATED_BY_RUN_ID = "getValidatedByValidationRunId";
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
 	private static final String DELETE = "delete";
@@ -203,31 +202,6 @@ public class RpkiObjectModel {
 			RpkiObjectDbObject rpkiObject = new RpkiObjectDbObject(rs);
 			loadRelatedObjects(rpkiObject, connection);
 			return rpkiObject;
-		}
-	}
-
-	/**
-	 * Get the validated {@link RpkiObject}s by a Validation Run id
-	 * 
-	 * @param validationRunId
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	public static Set<RpkiObject> getValidatedByValidationRunId(Long validationRunId, Connection connection)
-			throws SQLException {
-		String query = getQueryGroup().getQuery(GET_VALIDATED_BY_RUN_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			statement.setLong(1, validationRunId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
-			Set<RpkiObject> rpkiObjects = new HashSet<>();
-			while (rs.next()) {
-				RpkiObjectDbObject rpkiObject = new RpkiObjectDbObject(rs);
-				loadRelatedObjects(rpkiObject, connection);
-				rpkiObjects.add(rpkiObject);
-			}
-			return rpkiObjects;
 		}
 	}
 
