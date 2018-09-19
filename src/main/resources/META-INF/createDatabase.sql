@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS tal (
 
 -- Table TAL_URI
 CREATE TABLE IF NOT EXISTS tal_uri (
-  tau_id INTEGER NOT NULL,
+  tau_id INTEGER,
   tal_id INTEGER,
   tau_location TEXT NOT NULL,
   PRIMARY KEY (tau_id),
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS rpki_repository_rpki_object (
 
 -- Table ENCODED_RPKI_OBJECT
 CREATE TABLE IF NOT EXISTS encoded_rpki_object (
-    ero_id INTEGER NOT NULL,
+    ero_id INTEGER,
     rpo_id INTEGER,
     ero_encoded BLOB NOT NULL,
     PRIMARY KEY (ero_id),
@@ -121,8 +121,8 @@ CREATE INDEX IF NOT EXISTS validation_check__validation_run_id_idx ON validation
 
 --Table VALIDATION_CHECK_PARAMETERS
 CREATE TABLE IF NOT EXISTS validation_check_parameters (
-    vac_id INTEGER NOT NULL,
-    vcp_id INTEGER NOT NULL,
+    vac_id INTEGER,
+    vcp_id INTEGER,
     vcp_parameters TEXT NOT NULL,
     PRIMARY KEY (vac_id, vcp_id),
     FOREIGN KEY (vac_id) REFERENCES validation_check (vac_id) ON DELETE CASCADE
@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS gbr (
 
 -- Table SLURM_PREFIX
 CREATE TABLE IF NOT EXISTS slurm_prefix (
-  slp_id INTEGER NOT NULL,
+  slp_id INTEGER,
   slp_asn INTEGER NULL,
   slp_prefix_text TEXT NULL,
   slp_start_prefix BLOB NULL,
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS slurm_prefix (
 
 -- Table SLURM_BGPSEC
 CREATE TABLE IF NOT EXISTS slurm_bgpsec (
-  slb_id INTEGER NOT NULL,
+  slb_id INTEGER,
   slb_asn INTEGER NULL,
   slb_ski TEXT NULL,
   slb_public_key TEXT NULL,
