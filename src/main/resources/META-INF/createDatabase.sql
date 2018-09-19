@@ -23,8 +23,6 @@ CREATE INDEX IF NOT EXISTS tal_uri_tal_id_idx ON TAL_URI (tal_id ASC);
 CREATE TABLE IF NOT EXISTS rpki_repository (
     rpr_id INTEGER,
     rpr_updated_at TEXT NOT NULL,
-    rpr_status TEXT NOT NULL,
-    rpr_last_downloaded_at TEXT,
     rpr_location_uri TEXT,
     rpr_parent_repository_id INTEGER,
     PRIMARY KEY (rpr_id),
