@@ -18,6 +18,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import org.sqlite.SQLiteDataSource;
+import org.sqlite.SQLiteOpenMode;
 
 import mx.nic.lab.rpki.db.exception.InitializationException;
 
@@ -116,6 +117,7 @@ public class DatabaseSession {
 		SQLiteDataSource sqliteDataSource = new SQLiteDataSource();
 		sqliteDataSource.setUrl(url);
 		sqliteDataSource.setEnforceForeignKeys(true);
+		sqliteDataSource.getConfig().setOpenMode(SQLiteOpenMode.FULLMUTEX);
 
 		// Load the test query, if not present then load the most common
 		// (http://stackoverflow.com/questions/3668506)
@@ -183,7 +185,7 @@ public class DatabaseSession {
 	 * @return A {@link Connection} from the {@link DataSource}
 	 * @throws SQLException
 	 */
-	public static Connection getConnection() throws SQLException {
+	public synchronized static Connection getConnection() throws SQLException {
 		return dataSource.getConnection();
 	}
 }
