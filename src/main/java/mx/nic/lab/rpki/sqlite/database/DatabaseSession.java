@@ -118,6 +118,7 @@ public class DatabaseSession {
 		sqliteDataSource.setUrl(url);
 		sqliteDataSource.setEnforceForeignKeys(true);
 		sqliteDataSource.getConfig().setOpenMode(SQLiteOpenMode.FULLMUTEX);
+		sqliteDataSource.getConfig().setBusyTimeout("200");
 
 		// Load the test query, if not present then load the most common
 		// (http://stackoverflow.com/questions/3668506)
@@ -185,7 +186,9 @@ public class DatabaseSession {
 	 * @return A {@link Connection} from the {@link DataSource}
 	 * @throws SQLException
 	 */
-	public synchronized static Connection getConnection() throws SQLException {
-		return dataSource.getConnection();
+	public static Connection getConnection() throws SQLException {
+		synchronized (DatabaseSession.class) {
+			return dataSource.getConnection();
+		}
 	}
 }
