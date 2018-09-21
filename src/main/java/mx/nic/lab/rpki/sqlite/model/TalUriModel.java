@@ -18,7 +18,7 @@ import mx.nic.lab.rpki.sqlite.object.TalUriDbObject;
  * Model to retrieve TAL URIs data from the database
  *
  */
-public class TalUriModel {
+public class TalUriModel extends DatabaseModel {
 
 	private static final Logger logger = Logger.getLogger(TalUriModel.class.getName());
 
@@ -51,6 +51,15 @@ public class TalUriModel {
 	}
 
 	/**
+	 * Get the {@link Class} to use as a lock
+	 * 
+	 * @return
+	 */
+	private static Class<TalUriModel> getModelClass() {
+		return TalUriModel.class;
+	}
+
+	/**
 	 * Get all the {@link TalUri}s related to a TAL ID, return empty list when no
 	 * files are found
 	 * 
@@ -62,10 +71,10 @@ public class TalUriModel {
 	 */
 	public static List<TalUri> getByTalId(Long talId, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, talId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			List<TalUri> talUris = new ArrayList<TalUri>();
 			while (rs.next()) {
 				TalUriDbObject talUri = new TalUriDbObject(rs);
@@ -86,13 +95,13 @@ public class TalUriModel {
 	 */
 	public static Long create(TalUri newTalUri, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			Long newId = getLastId(connection) + 1;
 			newTalUri.setId(newId);
 			TalUriDbObject stored = new TalUriDbObject(newTalUri);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
+			int created = executeUpdate(statement, getModelClass());
 			if (created < 1) {
 				return null;
 			}
@@ -109,8 +118,8 @@ public class TalUriModel {
 	 */
 	private static Long getLastId(Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_LAST_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			ResultSet rs = statement.executeQuery();
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			ResultSet rs = executeQuery(statement, getModelClass());
 			// First in the table
 			if (!rs.next()) {
 				return 0L;

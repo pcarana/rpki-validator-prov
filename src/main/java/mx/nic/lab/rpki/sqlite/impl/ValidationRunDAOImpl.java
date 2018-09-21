@@ -2,12 +2,8 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
-import mx.nic.lab.rpki.db.exception.ValidationError;
-import mx.nic.lab.rpki.db.exception.ValidationErrorType;
-import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.ValidationRun;
 import mx.nic.lab.rpki.db.spi.ValidationRunDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
@@ -35,37 +31,17 @@ public class ValidationRunDAOImpl implements ValidationRunDAO {
 
 	@Override
 	public boolean completeValidation(ValidationRun validationRun) throws ApiDataAccessException {
+		boolean result = false;
 		try (Connection connection = DatabaseSession.getConnection()) {
-			// Validate that the object exists
-			if (ValidationRunModel.getById(validationRun.getId(), connection) == null) {
-				throw new ValidationException(
-						new ValidationError(ValidationRun.OBJECT_NAME, ValidationErrorType.OBJECT_NOT_EXISTS));
-			}
 			int updated = ValidationRunModel.completeValidation(validationRun, connection);
-			if (updated > 0) {
-				// And remove the older ones
-				ValidationRunModel.deleteOldValidationRuns(validationRun, connection);
-				return true;
-			}
-			return false;
+			result = updated > 0;
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
-	}
-
-	@Override
-	public ValidationRun get(long id) throws ApiDataAccessException {
+		// And remove the older ones
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return ValidationRunModel.getById(id, connection);
-		} catch (SQLException e) {
-			throw new ApiDataAccessException(e);
-		}
-	}
-
-	@Override
-	public List<ValidationRun> findAll() throws ApiDataAccessException {
-		try (Connection connection = DatabaseSession.getConnection()) {
-			return ValidationRunModel.getAll(null, connection);
+			ValidationRunModel.deleteOldValidationRuns(validationRun, connection);
+			return result;
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

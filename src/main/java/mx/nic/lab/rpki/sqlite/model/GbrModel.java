@@ -20,7 +20,7 @@ import mx.nic.lab.rpki.sqlite.object.GbrDbObject;
  * Model to retrieve GBR data from the database
  *
  */
-public class GbrModel {
+public class GbrModel extends DatabaseModel {
 
 	private static final Logger logger = Logger.getLogger(GbrModel.class.getName());
 
@@ -35,7 +35,6 @@ public class GbrModel {
 	// Queries IDs used by this model
 	private static final String GET_BY_PARENT_CA = "getByParentCa";
 	private static final String CREATE = "create";
-	private static final String GET_BY_UNIQUE = "getByUnique";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -50,6 +49,15 @@ public class GbrModel {
 		} catch (IOException e) {
 			throw new RuntimeException("Error loading query group", e);
 		}
+	}
+
+	/**
+	 * Get the {@link Class} to use as a lock
+	 * 
+	 * @return
+	 */
+	private static Class<GbrModel> getModelClass() {
+		return GbrModel.class;
 	}
 
 	/**
@@ -74,11 +82,11 @@ public class GbrModel {
 		}
 		// Parent found, now get its GBR sons
 		String query = getQueryGroup().getQuery(GET_BY_PARENT_CA);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, parentCaObject.getSubjectKeyIdentifier());
 			statement.setString(2, RpkiObject.Type.GBR.toString());
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			while (rs.next()) {
 				GbrDbObject gbr = new GbrDbObject(rs);
 				gbr.setRpkiObject(RpkiObjectModel.getById(gbr.getRpkiObjectId(), connection));
@@ -96,77 +104,16 @@ public class GbrModel {
 	 * @return The ID of the {@link Gbr} created
 	 * @throws SQLException
 	 */
-	public static Long create(Gbr newGbr, Connection connection) throws SQLException {
+	public static boolean create(Gbr newGbr, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			GbrDbObject stored = new GbrDbObject(newGbr);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
-			if (created < 1) {
-				return null;
-			}
-			stored = getByUniqueFields(stored, connection);
-			newGbr.setId(stored.getId());
-			return newGbr.getId();
+			int created = executeUpdate(statement, getModelClass());
+			return created > 0;
 		}
 	}
-
-	/**
-	 * Return a {@link PreparedStatement} that contains the necessary parameters to
-	 * make a search of a unique {@link Gbr} based on properties distinct that the
-	 * ID
-	 * 
-	 * @param gbr
-	 * @param queryId
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static PreparedStatement prepareUniqueSearch(Gbr gbr, String queryId, Connection connection)
-			throws SQLException {
-		String query = getQueryGroup().getQuery(queryId);
-		StringBuilder parameters = new StringBuilder();
-		int currentIdx = 1;
-		int rpkiObjIdIdx = -1;
-		int vcardIdx = -1;
-		if (gbr.getRpkiObject() != null) {
-			parameters.append(" and ").append(GbrDbObject.RPKI_OBJECT_COLUMN).append(" = ? ");
-			rpkiObjIdIdx = currentIdx++;
-		}
-		if (gbr.getVcard() != null) {
-			parameters.append(" and ").append(GbrDbObject.VCARD_COLUMN).append(" = ? ");
-			vcardIdx = currentIdx++;
-		}
-		query = query.replace("[and]", parameters.toString());
-		PreparedStatement statement = connection.prepareStatement(query);
-		if (rpkiObjIdIdx > 0) {
-			statement.setLong(rpkiObjIdIdx, gbr.getRpkiObject().getId());
-		}
-		if (vcardIdx > 0) {
-			statement.setString(vcardIdx, gbr.getVcard());
-		}
-		return statement;
-	}
-
-	/**
-	 * Get a {@link Gbr} by its unique fields
-	 * 
-	 * @param gbr
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static GbrDbObject getByUniqueFields(Gbr gbr, Connection connection) throws SQLException {
-		try (PreparedStatement statement = prepareUniqueSearch(gbr, GET_BY_UNIQUE, connection)) {
-			ResultSet resultSet = statement.executeQuery();
-			GbrDbObject found = new GbrDbObject(resultSet);
-			loadRelatedObjects(found, connection);
-			return found;
-		}
-	}
-
-	// TODO Add delete methods
 
 	/**
 	 * Get the parent CA of a {@link RpkiObject}, based on the AKI and SKI of the
@@ -192,17 +139,6 @@ public class GbrModel {
 			return null;
 		}
 		return getParentCa(object, connection);
-	}
-
-	/**
-	 * Load all the related objects to the GBR
-	 * 
-	 * @param gbr
-	 * @param connection
-	 * @throws SQLException
-	 */
-	private static void loadRelatedObjects(GbrDbObject gbr, Connection connection) throws SQLException {
-		gbr.setRpkiObject(RpkiObjectModel.getById(gbr.getRpkiObjectId(), connection));
 	}
 
 	public static QueryGroup getQueryGroup() {

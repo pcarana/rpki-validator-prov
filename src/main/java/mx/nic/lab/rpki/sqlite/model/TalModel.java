@@ -22,7 +22,7 @@ import mx.nic.lab.rpki.sqlite.object.TalDbObject;
  * Model to retrieve TALs data from the database
  *
  */
-public class TalModel {
+public class TalModel extends DatabaseModel {
 
 	private static final Logger logger = Logger.getLogger(TalModel.class.getName());
 
@@ -60,6 +60,15 @@ public class TalModel {
 	}
 
 	/**
+	 * Get the {@link Class} to use as a lock
+	 * 
+	 * @return
+	 */
+	private static Class<TalModel> getModelClass() {
+		return TalModel.class;
+	}
+
+	/**
 	 * Get a {@link Tal} by its ID, return null if no data is found
 	 * 
 	 * @param id
@@ -69,17 +78,17 @@ public class TalModel {
 	 */
 	public static Tal getById(Long id, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
 			Tal tal = null;
 			do {
 				tal = new TalDbObject(rs);
-				loadRelatedObjects(tal, connection);
+				loadRelatedObjects(tal, true, connection);
 			} while (rs.next());
 
 			return tal;
@@ -97,13 +106,13 @@ public class TalModel {
 	public static List<Tal> getAll(PagingParameters pagingParams, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, TalDbObject.propertyToColumnMap);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			List<Tal> tals = new ArrayList<Tal>();
 			while (rs.next()) {
 				TalDbObject tal = new TalDbObject(rs);
-				loadRelatedObjects(tal, connection);
+				loadRelatedObjects(tal, true, connection);
 				tals.add(tal);
 			}
 			return tals;
@@ -122,14 +131,14 @@ public class TalModel {
 	public static Tal getExistentTal(Tal tal, Connection connection) throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(tal, GET_BY_UNIQUE, connection)) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
 			Tal found = null;
 			do {
 				found = new TalDbObject(rs);
-				loadRelatedObjects(found, connection);
+				loadRelatedObjects(found, false, connection);
 			} while (rs.next());
 
 			return found;
@@ -146,7 +155,7 @@ public class TalModel {
 	 */
 	public static boolean exist(Tal tal, Connection connection) throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(tal, EXIST, connection)) {
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			return rs.next();
 		}
 	}
@@ -161,11 +170,11 @@ public class TalModel {
 	 */
 	public static Long create(Tal newTal, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			TalDbObject stored = new TalDbObject(newTal);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
+			int created = executeUpdate(statement, getModelClass());
 			if (created < 1) {
 				return null;
 			}
@@ -189,10 +198,10 @@ public class TalModel {
 		// Delete the related repositories and objects
 		RpkiRepositoryModel.deleteByTalId(tal.getId(), connection);
 		String query = getQueryGroup().getQuery(DELETE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, tal.getId());
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+			return executeUpdate(statement, getModelClass());
 		}
 	}
 
@@ -206,14 +215,14 @@ public class TalModel {
 	 */
 	public static Set<Tal> getByRpkiRepositoryId(Long rpkiRepositoryId, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_RPKI_REPO_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiRepositoryId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			Set<Tal> tals = new HashSet<>();
 			while (rs.next()) {
 				TalDbObject tal = new TalDbObject(rs);
-				loadRelatedObjects(tal, connection);
+				loadRelatedObjects(tal, false, connection);
 				tals.add(tal);
 			}
 			return tals;
@@ -230,11 +239,11 @@ public class TalModel {
 	 */
 	public static int updateLoadedCertificate(Tal tal, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(UPDATE_LOADED_CER);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, tal.getLoadedCer());
 			statement.setLong(2, tal.getId());
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+			return executeUpdate(statement, getModelClass());
 		}
 	}
 
@@ -245,9 +254,12 @@ public class TalModel {
 	 * @param connection
 	 * @throws SQLException
 	 */
-	private static void loadRelatedObjects(Tal tal, Connection connection) throws SQLException {
+	private static void loadRelatedObjects(Tal tal, boolean loadValidationRuns, Connection connection)
+			throws SQLException {
 		Long talId = tal.getId();
-		tal.setValidationRuns(ValidationRunModel.getByTalId(talId, connection));
+		if (loadValidationRuns) {
+			tal.setValidationRuns(ValidationRunModel.getByTalId(talId, connection));
+		}
 		tal.setTalUris(TalUriModel.getByTalId(talId, connection));
 	}
 
@@ -287,7 +299,7 @@ public class TalModel {
 			publicKeyIdx = currentIdx++;
 		}
 		query = query.replace("[and]", parameters.toString());
-		PreparedStatement statement = connection.prepareStatement(query);
+		PreparedStatement statement = prepareStatement(connection, query, getModelClass());
 		if (publicKeyIdx > 0) {
 			statement.setString(publicKeyIdx, tal.getPublicKey());
 		}
@@ -304,9 +316,9 @@ public class TalModel {
 	 */
 	private static TalDbObject getByUniqueFields(Tal tal, Connection connection) throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(tal, GET_BY_UNIQUE, connection)) {
-			ResultSet resultSet = statement.executeQuery();
+			ResultSet resultSet = executeQuery(statement, getModelClass());
 			TalDbObject found = new TalDbObject(resultSet);
-			loadRelatedObjects(found, connection);
+			loadRelatedObjects(found, false, connection);
 			return found;
 		}
 	}

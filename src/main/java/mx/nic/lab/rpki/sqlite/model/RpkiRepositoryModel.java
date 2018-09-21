@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.RpkiRepository;
 import mx.nic.lab.rpki.db.pojo.Tal;
 import mx.nic.lab.rpki.sqlite.database.QueryGroup;
@@ -23,7 +22,7 @@ import mx.nic.lab.rpki.sqlite.object.RpkiRepositoryDbObject;
  * Model to retrieve RPKI Repositories data from the database
  *
  */
-public class RpkiRepositoryModel {
+public class RpkiRepositoryModel extends DatabaseModel {
 
 	private static final Logger logger = Logger.getLogger(RpkiRepositoryModel.class.getName());
 
@@ -41,10 +40,10 @@ public class RpkiRepositoryModel {
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_BY_URI = "getByUri";
 	private static final String GET_BY_VALIDATION_RUN_ID = "getByValidationRunId";
-	private static final String GET_ALL = "getAll";
 	private static final String CREATE_TAL_RELATION = "createTalRelation";
 	private static final String UPDATE_PARENT_REPOSITORY = "updateParentRepository";
 	private static final String GET_BY_TAL_ID = "getByTalId";
+	private static final String GET_IDS_BY_TAL_ID = "getIdsByTalId";
 	private static final String DELETE_BY_TAL_ID = "deleteByTalId";
 
 	/**
@@ -63,6 +62,15 @@ public class RpkiRepositoryModel {
 	}
 
 	/**
+	 * Get the {@link Class} to use as a lock
+	 * 
+	 * @return
+	 */
+	private static Class<RpkiRepositoryModel> getModelClass() {
+		return RpkiRepositoryModel.class;
+	}
+
+	/**
 	 * Creates a new {@link RpkiRepository} returns null if the object couldn't be
 	 * created.
 	 * 
@@ -73,11 +81,11 @@ public class RpkiRepositoryModel {
 	 */
 	public static Long create(RpkiRepository newRpkiRepository, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			RpkiRepositoryDbObject stored = new RpkiRepositoryDbObject(newRpkiRepository);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
+			int created = executeUpdate(statement, getModelClass());
 			if (created < 1) {
 				return null;
 			}
@@ -98,10 +106,10 @@ public class RpkiRepositoryModel {
 	 */
 	public static RpkiRepository getById(Long id, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
@@ -125,10 +133,10 @@ public class RpkiRepositoryModel {
 	 */
 	public static RpkiRepository getByUri(String uri, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_URI);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setString(1, uri);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
@@ -143,22 +151,21 @@ public class RpkiRepositoryModel {
 	}
 
 	/**
-	 * Get all the {@link RpkiRepository}s, return empty list when no files are
-	 * found
+	 * Get all the {@link RpkiRepository}s related to a TAL ID, return empty list
+	 * when no files are found
 	 * 
-	 * @param pagingParams
+	 * @param talId
 	 * @param connection
 	 * @return The list of {@link RpkiRepository}s, or empty list when no data is
 	 *         found
 	 * @throws SQLException
 	 */
-	public static List<RpkiRepository> getAll(PagingParameters pagingParams, Connection connection)
-			throws SQLException {
-		String query = getQueryGroup().getQuery(GET_ALL);
-		query = Util.getQueryWithPaging(query, pagingParams, RpkiRepositoryDbObject.propertyToColumnMap);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+	public static List<RpkiRepository> getByTalId(Long talId, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setLong(1, talId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			List<RpkiRepository> rpkiRepositories = new ArrayList<RpkiRepository>();
 			while (rs.next()) {
 				RpkiRepositoryDbObject rpkiRepository = new RpkiRepositoryDbObject(rs);
@@ -170,13 +177,20 @@ public class RpkiRepositoryModel {
 		}
 	}
 
-	public static Set<Long> getByValidationRunId(Long validationRunId, Connection connection)
-			throws SQLException {
+	/**
+	 * Get the IDs of the {@link RpkiRepository}s related to a ValidationRun ID
+	 * 
+	 * @param validationRunId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Set<Long> getByValidationRunId(Long validationRunId, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_VALIDATION_RUN_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, validationRunId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			Set<Long> rpkiRepositories = new HashSet<>();
 			while (rs.next()) {
 				RpkiRepositoryDbObject rpkiRepository = new RpkiRepositoryDbObject(rs);
@@ -196,7 +210,7 @@ public class RpkiRepositoryModel {
 	 */
 	public static int updateParentRepository(RpkiRepository rpkiRepository, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(UPDATE_PARENT_REPOSITORY);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			if (rpkiRepository.getParentRepository() != null) {
 				statement.setLong(1, rpkiRepository.getParentRepository().getId());
 			} else {
@@ -204,7 +218,7 @@ public class RpkiRepositoryModel {
 			}
 			statement.setLong(2, rpkiRepository.getId());
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+			return executeUpdate(statement, getModelClass());
 		}
 	}
 
@@ -222,10 +236,10 @@ public class RpkiRepositoryModel {
 			RpkiObjectModel.deleteByRpkiRepositoryId(rpkiRepositoryId, connection);
 		}
 		String query = getQueryGroup().getQuery(DELETE_BY_TAL_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, talId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+			return executeUpdate(statement, getModelClass());
 		}
 	}
 
@@ -273,11 +287,11 @@ public class RpkiRepositoryModel {
 	private static boolean createTalRelation(Long rpkiRepositoryId, Long talId, Connection connection)
 			throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE_TAL_RELATION);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiRepositoryId);
 			statement.setLong(2, talId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
+			int created = executeUpdate(statement, getModelClass());
 			return created > 0;
 		}
 	}
@@ -304,7 +318,7 @@ public class RpkiRepositoryModel {
 			locationUriIdx = currentIdx++;
 		}
 		query = query.replace("[and]", parameters.toString());
-		PreparedStatement statement = connection.prepareStatement(query);
+		PreparedStatement statement = prepareStatement(connection, query, getModelClass());
 		if (locationUriIdx > 0) {
 			statement.setString(locationUriIdx, rpkiRepository.getLocationUri());
 		}
@@ -322,7 +336,7 @@ public class RpkiRepositoryModel {
 	private static RpkiRepositoryDbObject getByUniqueFields(RpkiRepository rpkiRepository, Connection connection)
 			throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(rpkiRepository, GET_BY_UNIQUE, connection)) {
-			ResultSet resultSet = statement.executeQuery();
+			ResultSet resultSet = executeQuery(statement, getModelClass());
 			RpkiRepositoryDbObject found = new RpkiRepositoryDbObject(resultSet);
 			loadRelatedObjects(found, connection);
 			return found;
@@ -338,14 +352,14 @@ public class RpkiRepositoryModel {
 	 * @throws SQLException
 	 */
 	private static List<Long> getRelatedIdsByTalId(Long talId, Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		String query = getQueryGroup().getQuery(GET_IDS_BY_TAL_ID);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, talId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			List<Long> rpkiRepositories = new ArrayList<>();
 			while (rs.next()) {
-				rpkiRepositories.add(rs.getLong("rpr_id"));
+				rpkiRepositories.add(rs.getLong(RpkiRepositoryDbObject.ID_COLUMN));
 			}
 			return rpkiRepositories;
 		}

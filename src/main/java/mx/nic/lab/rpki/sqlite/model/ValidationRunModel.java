@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.RpkiRepository;
 import mx.nic.lab.rpki.db.pojo.ValidationCheck;
 import mx.nic.lab.rpki.db.pojo.ValidationRun;
@@ -22,7 +21,7 @@ import mx.nic.lab.rpki.sqlite.object.ValidationRunDbObject;
  * Model to retrieve Validation runs data from the database
  *
  */
-public class ValidationRunModel {
+public class ValidationRunModel extends DatabaseModel {
 
 	private static final Logger logger = Logger.getLogger(ValidationRunModel.class.getName());
 
@@ -36,8 +35,6 @@ public class ValidationRunModel {
 
 	// Queries IDs used by this model
 	private static final String GET_BY_ID = "getById";
-	private static final String GET_BY_UNIQUE = "getByUnique";
-	private static final String GET_ALL = "getAll";
 	private static final String GET_BY_TAL_ID = "getByTalId";
 	private static final String CREATE = "create";
 	private static final String CREATE_REPOSITORY_RELATION = "createRepositoryRelation";
@@ -60,6 +57,15 @@ public class ValidationRunModel {
 	}
 
 	/**
+	 * Get the {@link Class} to use as a lock
+	 * 
+	 * @return
+	 */
+	private static Class<ValidationRunModel> getModelClass() {
+		return ValidationRunModel.class;
+	}
+
+	/**
 	 * Get a {@link ValidationRun} by its ID, return null if no data is found
 	 * 
 	 * @param id
@@ -69,44 +75,18 @@ public class ValidationRunModel {
 	 */
 	public static ValidationRun getById(Long id, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
 			ValidationRunDbObject validationRun = null;
 			do {
 				validationRun = new ValidationRunDbObject(rs);
-				loadRelatedObjects(validationRun, connection);
 			} while (rs.next());
 			return validationRun;
-		}
-	}
-
-	/**
-	 * Get all the {@link ValidationRun}s, return empty list when no files are found
-	 * 
-	 * @param pagingParams
-	 * @param connection
-	 * @return The list of {@link ValidationRun}s, or empty list when no data is
-	 *         found
-	 * @throws SQLException
-	 */
-	public static List<ValidationRun> getAll(PagingParameters pagingParams, Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(GET_ALL);
-		query = Util.getQueryWithPaging(query, pagingParams, ValidationRunDbObject.propertyToColumnMap);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
-			List<ValidationRun> validationRuns = new ArrayList<ValidationRun>();
-			while (rs.next()) {
-				ValidationRunDbObject validationRun = new ValidationRunDbObject(rs);
-				validationRuns.add(validationRun);
-				loadRelatedObjects(validationRun, connection);
-			}
-			return validationRuns;
 		}
 	}
 
@@ -123,11 +103,10 @@ public class ValidationRunModel {
 	 */
 	public static List<ValidationRun> getByTalId(Long talId, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, talId);
-			statement.setLong(2, talId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			List<ValidationRun> validationRuns = new ArrayList<ValidationRun>();
 			while (rs.next()) {
 				ValidationRunDbObject validationRun = new ValidationRunDbObject(rs);
@@ -148,11 +127,12 @@ public class ValidationRunModel {
 	 */
 	public static int deleteOldValidationRuns(ValidationRun validationRun, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(DELETE_OLD);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, validationRun.getId());
 			statement.setString(2, validationRun.getType().toString());
+			statement.setLong(3, validationRun.getTalId());
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+			return executeUpdate(statement, getModelClass());
 		}
 	}
 
@@ -166,20 +146,25 @@ public class ValidationRunModel {
 	 * @throws SQLException
 	 */
 	public static Long create(ValidationRun newValidationRun, Connection connection) throws SQLException {
+		Long result = null;
 		String query = getQueryGroup().getQuery(CREATE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		boolean originalAutoCommit = connection.getAutoCommit();
+		connection.setAutoCommit(false);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			ValidationRunDbObject stored = new ValidationRunDbObject(newValidationRun);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
-			if (created < 1) {
-				return null;
+			int created = executeUpdate(statement, getModelClass());
+			if (created > 0) {
+				newValidationRun.setId(getLastRowid(connection, getModelClass()));
+				storeRelatedObjects(newValidationRun, connection);
+				result = newValidationRun.getId();
 			}
-			stored = getByUniqueFields(stored, connection);
-			newValidationRun.setId(stored.getId());
-			storeRelatedObjects(newValidationRun, connection);
-			return newValidationRun.getId();
+		} finally {
+			connection.commit();
+			connection.setAutoCommit(originalAutoCommit);
 		}
+		return result;
 	}
 
 	/**
@@ -192,16 +177,23 @@ public class ValidationRunModel {
 	 * @throws SQLException
 	 */
 	public static int completeValidation(ValidationRun validationRun, Connection connection) throws SQLException {
+		int result = 0;
 		String query = getQueryGroup().getQuery(UPDATE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		boolean originalAutoCommit = connection.getAutoCommit();
+		connection.setAutoCommit(false);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			ValidationRunDbObject stored = new ValidationRunDbObject(validationRun);
 			stored.storeToDatabase(statement);
 			statement.setLong(statement.getParameterMetaData().getParameterCount(), validationRun.getId());
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int updated = statement.executeUpdate();
+			int updated = executeUpdate(statement, getModelClass());
 			storeRelatedObjects(validationRun, connection);
-			return updated;
+			result = updated;
+		} finally {
+			connection.commit();
+			connection.setAutoCommit(originalAutoCommit);
 		}
+		return result;
 	}
 
 	/**
@@ -268,75 +260,12 @@ public class ValidationRunModel {
 	private static boolean createRepositoriesRelation(Long validationRunId, Long rpkiRepositoryId,
 			Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE_REPOSITORY_RELATION);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, validationRunId);
 			statement.setLong(2, rpkiRepositoryId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
+			int created = executeUpdate(statement, getModelClass());
 			return created > 0;
-		}
-	}
-
-	/**
-	 * Return a {@link PreparedStatement} that contains the necessary parameters to
-	 * make a search of a unique {@link ValidationRun} based on properties distinct
-	 * that the ID
-	 * 
-	 * @param validationRun
-	 * @param queryId
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static PreparedStatement prepareUniqueSearch(ValidationRun validationRun, String queryId,
-			Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(queryId);
-		StringBuilder parameters = new StringBuilder();
-		int currentIdx = 1;
-		int talIdIdx = -1;
-		int typeIdx = -1;
-		int statusIdx = -1;
-		if (validationRun.getTalId() != null) {
-			parameters.append(" and ").append(ValidationRunDbObject.TAL_ID_COLUMN).append(" = ? ");
-			talIdIdx = currentIdx++;
-		}
-		if (validationRun.getType() != null) {
-			parameters.append(" and ").append(ValidationRunDbObject.TYPE_COLUMN).append(" = ? ");
-			typeIdx = currentIdx++;
-		}
-		if (validationRun.getStatus() != null) {
-			parameters.append(" and ").append(ValidationRunDbObject.STATUS_COLUMN).append(" = ? ");
-			statusIdx = currentIdx++;
-		}
-		query = query.replace("[and]", parameters.toString());
-		PreparedStatement statement = connection.prepareStatement(query);
-		if (talIdIdx > 0) {
-			statement.setLong(talIdIdx, validationRun.getTalId());
-		}
-		if (typeIdx > 0) {
-			statement.setString(typeIdx, validationRun.getType().toString());
-		}
-		if (statusIdx > 0) {
-			statement.setString(statusIdx, validationRun.getStatus().toString());
-		}
-		return statement;
-	}
-
-	/**
-	 * Get a {@link ValidationRun} by its unique fields
-	 * 
-	 * @param validationRun
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static ValidationRunDbObject getByUniqueFields(ValidationRun validationRun, Connection connection)
-			throws SQLException {
-		try (PreparedStatement statement = prepareUniqueSearch(validationRun, GET_BY_UNIQUE, connection)) {
-			ResultSet resultSet = statement.executeQuery();
-			ValidationRunDbObject found = new ValidationRunDbObject(resultSet);
-			loadRelatedObjects(found, connection);
-			return found;
 		}
 	}
 

@@ -49,22 +49,14 @@ insert into rpki_object (
        rpo_is_ca)
 values (?, ?, ?, ?, ?, ?, ?, ?);
 
-#delete
-delete from rpki_object where rpo_id = ?;
-
 #deleteUnreachable
 delete from rpki_object where rpo_last_marked_reachable_at < ?;
 
 #createEncodedRpkiObject
 insert into encoded_rpki_object (
-       ero_id,
        rpo_id,
        ero_encoded)
-values (?, ?, ?);
-
-#getEncodedRpkiObjectLastId
-select max(ero_id)
-  from encoded_rpki_object;
+values (?, ?);
 
 #createLocation
 insert into rpki_object_locations (rpo_id, rpo_locations)
@@ -80,3 +72,8 @@ delete from rpki_object
    select rpo_id
      from rpki_repository_rpki_object
     where rpr_id = ?);
+
+#getIdBySha256
+select rpo_id
+  from rpki_object
+ where rpo_sha256 = ?;

@@ -22,6 +22,7 @@ import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Roa;
 import mx.nic.lab.rpki.db.pojo.RpkiObject;
 import mx.nic.lab.rpki.db.pojo.RpkiObject.Type;
+import mx.nic.lab.rpki.db.pojo.RpkiRepository;
 import mx.nic.lab.rpki.sqlite.database.QueryGroup;
 import mx.nic.lab.rpki.sqlite.object.EncodedRpkiObjectDbObject;
 import mx.nic.lab.rpki.sqlite.object.RpkiObjectDbObject;
@@ -30,7 +31,7 @@ import mx.nic.lab.rpki.sqlite.object.RpkiObjectDbObject;
  * Model to retrieve RPKI Objects data from the database
  *
  */
-public class RpkiObjectModel {
+public class RpkiObjectModel extends DatabaseModel {
 
 	private static final Logger logger = Logger.getLogger(RpkiObjectModel.class.getName());
 
@@ -49,13 +50,12 @@ public class RpkiObjectModel {
 	private static final String GET_RPKI_REPO_REL = "getRpkiRepositoryRelation";
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
-	private static final String DELETE = "delete";
 	private static final String DELETE_UNREACHABLE = "deleteUnreachable";
 	private static final String CREATE_ENCODED = "createEncodedRpkiObject";
-	private static final String GET_ENCODED_LAST_ID = "getEncodedRpkiObjectLastId";
 	private static final String CREATE_LOCATION = "createLocation";
 	private static final String CREATE_RPKI_REPO_REL = "createRpkiRepositoryRelation";
 	private static final String DELETE_BY_RPKI_REPOSITORY_ID = "deleteByRpkiRepositoryId";
+	private static final String GET_ID_BY_SHA256 = "getIdBySha256";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -73,6 +73,15 @@ public class RpkiObjectModel {
 	}
 
 	/**
+	 * Get the {@link Class} to use as a lock
+	 * 
+	 * @return
+	 */
+	private static Class<RpkiObjectModel> getModelClass() {
+		return RpkiObjectModel.class;
+	}
+
+	/**
 	 * Get a {@link RpkiObject} by its ID, return null if no data is found
 	 * 
 	 * @param id
@@ -86,10 +95,10 @@ public class RpkiObjectModel {
 		parameters.append(" and ").append(RpkiObjectDbObject.ID_COLUMN).append(" = ? ");
 		query = query.replace("[and]", parameters.toString());
 		query = Util.getQueryWithPaging(query, null, null);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
@@ -117,17 +126,17 @@ public class RpkiObjectModel {
 		parameters.append(" and ").append(RpkiObjectDbObject.SHA256_COLUMN).append(" = ? ");
 		query = query.replace("[and]", parameters.toString());
 		query = Util.getQueryWithPaging(query, null, null);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, sha256);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
 			RpkiObject rpkiObject = null;
 			do {
 				rpkiObject = new RpkiObjectDbObject(rs);
-				loadRelatedObjects(rpkiObject, connection);
+				rpkiObject.setRpkiRepositories(getRpkiRepositories(rpkiObject.getId(), connection));
 			} while (rs.next());
 
 			return rpkiObject;
@@ -156,17 +165,17 @@ public class RpkiObjectModel {
 		parameters.append(") ");
 		query = query.replace("[and]", parameters.toString());
 		query = Util.getQueryWithPaging(query, null, null);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			int index = 1;
 			for (byte[] sha256 : sha256Set) {
 				statement.setBytes(index++, sha256);
 			}
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			List<RpkiObject> rpkiObjects = new ArrayList<RpkiObject>();
 			while (rs.next()) {
 				RpkiObjectDbObject rpkiObject = new RpkiObjectDbObject(rs);
-				loadRelatedObjects(rpkiObject, connection);
+				rpkiObjects.add(rpkiObject);
 			}
 			return rpkiObjects;
 		}
@@ -191,16 +200,15 @@ public class RpkiObjectModel {
 		parameters.append(" and ").append(RpkiObjectDbObject.AUTHORITY_KEY_IDENTIFIER_COLUMN).append(" = ? ");
 		query = query.replace("[and]", parameters.toString());
 		query = Util.getQueryWithPaging(query, pagingParams, RpkiObjectDbObject.propertyToColumnMap);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setString(1, type.toString());
 			statement.setBytes(2, authorityKeyIdentifier);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
 			RpkiObjectDbObject rpkiObject = new RpkiObjectDbObject(rs);
-			loadRelatedObjects(rpkiObject, connection);
 			return rpkiObject;
 		}
 	}
@@ -221,15 +229,14 @@ public class RpkiObjectModel {
 		parameters.append(" and ").append(RpkiObjectDbObject.SUBJECT_KEY_IDENTIFIER_COLUMN).append(" = ? ");
 		query = query.replace("[and]", parameters.toString());
 		query = Util.getQueryWithPaging(query, null, null);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, subjectKeyIdentifier);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
 			RpkiObjectDbObject rpkiObject = new RpkiObjectDbObject(rs);
-			loadRelatedObjects(rpkiObject, connection);
 			return rpkiObject;
 		}
 	}
@@ -257,7 +264,7 @@ public class RpkiObjectModel {
 			sha256Idx = currentIdx++;
 		}
 		query = query.replace("[and]", parameters.toString());
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			if (typeIdx > 0) {
 				statement.setString(typeIdx, rpkiObject.getType().toString());
 			}
@@ -265,52 +272,35 @@ public class RpkiObjectModel {
 				statement.setBytes(sha256Idx, rpkiObject.getSha256());
 			}
 
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			return rs.next();
 		}
 	}
 
 	/**
-	 * Creates a new {@link RpkiObject} returns null if the object couldn't be
-	 * created.
+	 * Creates a Set of {@link RpkiObject}s using a DB transaction
 	 * 
-	 * @param newRpkiObject
+	 * @param rpkiObjects
 	 * @param connection
-	 * @return The ID of the {@link RpkiObject} created
 	 * @throws SQLException
 	 */
-	public static Long create(RpkiObject newRpkiObject, Connection connection) throws SQLException {
+	public static void bulkCreate(Set<RpkiObject> rpkiObjects, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			RpkiObjectDbObject stored = new RpkiObjectDbObject(newRpkiObject);
-			stored.storeToDatabase(statement);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
-			if (created < 1) {
-				return null;
+		boolean originalAutoCommit = connection.getAutoCommit();
+		connection.setAutoCommit(false);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			for (RpkiObject newRpkiObject : rpkiObjects) {
+				RpkiObjectDbObject stored = new RpkiObjectDbObject(newRpkiObject);
+				stored.storeToDatabase(statement);
+				logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+				executeUpdate(statement, getModelClass());
+				newRpkiObject.setId(getIdBySha256(newRpkiObject.getSha256(), connection));
+				storeRelatedObjects(newRpkiObject, connection);
 			}
-			stored = (RpkiObjectDbObject) getBySha256(newRpkiObject.getSha256(), connection);
-			newRpkiObject.setId(stored.getId());
-			storeRelatedObjects(newRpkiObject, connection);
-			return newRpkiObject.getId();
-		}
-	}
-
-	/**
-	 * Delete the {@link RpkiObject}, this assumes that the DB has a "ON DELETE
-	 * CASCADE" related constraint
-	 * 
-	 * @param rpkiObject
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	public static int delete(RpkiObject rpkiObject, Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(DELETE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			statement.setLong(1, rpkiObject.getId());
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+		} finally {
+			// Commit what has been done
+			connection.commit();
+			connection.setAutoCommit(originalAutoCommit);
 		}
 	}
 
@@ -326,10 +316,10 @@ public class RpkiObjectModel {
 	 */
 	public static int deleteUnreachableObjects(Instant unreachableSince, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(DELETE_UNREACHABLE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setString(1, unreachableSince.toString());
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+			return executeUpdate(statement, getModelClass());
 		}
 	}
 
@@ -345,10 +335,10 @@ public class RpkiObjectModel {
 	public static EncodedRpkiObject getEncodedByRpkiObjectId(Long rpkiObjectId, Connection connection)
 			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ENCODED_BY_OBJECT_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiObjectId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
@@ -369,11 +359,11 @@ public class RpkiObjectModel {
 	public static int addRpkiRepository(Long rpkiObjectId, Long rpkiRepositoryId, Connection connection)
 			throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE_RPKI_REPO_REL);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiRepositoryId);
 			statement.setLong(2, rpkiObjectId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+			return executeUpdate(statement, getModelClass());
 		}
 	}
 
@@ -387,29 +377,10 @@ public class RpkiObjectModel {
 	 */
 	public static int deleteByRpkiRepositoryId(Long rpkiRepositoryId, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(DELETE_BY_RPKI_REPOSITORY_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiRepositoryId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
-		}
-	}
-
-	/**
-	 * Get the last registered ID for an EncodedRpkiObject
-	 * 
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static Long getEncodedObjectLastId(Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(GET_ENCODED_LAST_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			ResultSet rs = statement.executeQuery();
-			// First in the table
-			if (!rs.next()) {
-				return 0L;
-			}
-			return rs.getLong(1);
+			return executeUpdate(statement, getModelClass());
 		}
 	}
 
@@ -470,10 +441,10 @@ public class RpkiObjectModel {
 	 */
 	private static Set<Long> getRpkiRepositories(Long rpkiObjectId, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_RPKI_REPO_REL);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiObjectId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			Set<Long> result = new HashSet<>();
 			while (rs.next()) {
 				result.add(rs.getLong("rpr_id"));
@@ -492,10 +463,10 @@ public class RpkiObjectModel {
 	 */
 	private static SortedSet<String> getLocations(Long rpkiObjectId, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_LOCATIONS);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiObjectId);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			SortedSet<String> result = new TreeSet<>();
 			while (rs.next()) {
 				result.add(rs.getString("rpo_locations"));
@@ -506,27 +477,23 @@ public class RpkiObjectModel {
 	}
 
 	/**
-	 * Store a {@link EncodedRpkiObject} and return the ID of the created object
+	 * Store a {@link EncodedRpkiObject} and return <code>boolean</code> to indicate
+	 * success
 	 * 
 	 * @param newEncodedRpkiObject
 	 * @param connection
-	 * @return
+	 * @return <code>boolean</code> to indicate success
 	 * @throws SQLException
 	 */
-	private static Long createEncodedRpkiObject(EncodedRpkiObject newEncodedRpkiObject, Connection connection)
+	private static boolean createEncodedRpkiObject(EncodedRpkiObject newEncodedRpkiObject, Connection connection)
 			throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE_ENCODED);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			Long newId = getEncodedObjectLastId(connection) + 1;
-			newEncodedRpkiObject.setId(newId);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			EncodedRpkiObjectDbObject stored = new EncodedRpkiObjectDbObject(newEncodedRpkiObject);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
-			if (created < 1) {
-				return null;
-			}
-			return newId;
+			int created = executeUpdate(statement, getModelClass());
+			return created > 0;
 		}
 	}
 
@@ -542,11 +509,11 @@ public class RpkiObjectModel {
 	private static boolean createLocation(Long rpkiObjectId, String location, Connection connection)
 			throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE_LOCATION);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiObjectId);
 			statement.setString(2, location);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
+			int created = executeUpdate(statement, getModelClass());
 			return created > 0;
 		}
 	}
@@ -568,6 +535,26 @@ public class RpkiObjectModel {
 			created += addRpkiRepository(rpkiObjectId, rpkiRepositoryId, connection);
 		}
 		return created == rpkiRepositories.size();
+	}
+
+	/**
+	 * Get the ID of the object based on its SHA256 hash
+	 * 
+	 * @param sha256
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	private static Long getIdBySha256(byte[] sha256, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_ID_BY_SHA256);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setBytes(1, sha256);
+			ResultSet resultSet = executeQuery(statement, getModelClass());
+			if (!resultSet.next()) {
+				return null;
+			}
+			return resultSet.getLong(RpkiObjectDbObject.ID_COLUMN);
+		}
 	}
 
 	public static QueryGroup getQueryGroup() {

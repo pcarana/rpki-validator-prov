@@ -19,7 +19,7 @@ import mx.nic.lab.rpki.sqlite.object.SlurmBgpsecDbObject;
  * Model to retrieve SLURM BGPsec data from the database
  *
  */
-public class SlurmBgpsecModel {
+public class SlurmBgpsecModel extends DatabaseModel {
 
 	private static final Logger logger = Logger.getLogger(SlurmBgpsecModel.class.getName());
 
@@ -56,6 +56,15 @@ public class SlurmBgpsecModel {
 	}
 
 	/**
+	 * Get the {@link Class} to use as a lock
+	 * 
+	 * @return
+	 */
+	private static Class<SlurmBgpsecModel> getModelClass() {
+		return SlurmBgpsecModel.class;
+	}
+
+	/**
 	 * Get a {@link SlurmBgpsec} by its ID, return null if no data is found
 	 * 
 	 * @param id
@@ -65,10 +74,10 @@ public class SlurmBgpsecModel {
 	 */
 	public static SlurmBgpsec getById(Long id, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_BY_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			if (!rs.next()) {
 				return null;
 			}
@@ -92,9 +101,9 @@ public class SlurmBgpsecModel {
 	public static List<SlurmBgpsec> getAll(PagingParameters pagingParams, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, SlurmBgpsecDbObject.propertyToColumnMap);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			List<SlurmBgpsec> slurmBgpsecs = new ArrayList<SlurmBgpsec>();
 			while (rs.next()) {
 				SlurmBgpsecDbObject slurmBgpsec = new SlurmBgpsecDbObject(rs);
@@ -119,10 +128,10 @@ public class SlurmBgpsecModel {
 			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE);
 		query = Util.getQueryWithPaging(query, pagingParams, SlurmBgpsecDbObject.propertyToColumnMap);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setInt(1, type);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			List<SlurmBgpsec> slurmBgpsecs = new ArrayList<SlurmBgpsec>();
 			while (rs.next()) {
 				SlurmBgpsecDbObject slurmBgpsec = new SlurmBgpsecDbObject(rs);
@@ -162,7 +171,7 @@ public class SlurmBgpsecModel {
 			publicKeyIdx = currentIdx++;
 		}
 		query = query.replace("[and]", parameters.toString());
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setInt(1, slurmBgpsec.getType());
 			if (asnIdx > 0) {
 				statement.setLong(asnIdx, slurmBgpsec.getAsn());
@@ -174,7 +183,7 @@ public class SlurmBgpsecModel {
 				statement.setString(publicKeyIdx, slurmBgpsec.getRouterPublicKey());
 			}
 
-			ResultSet rs = statement.executeQuery();
+			ResultSet rs = executeQuery(statement, getModelClass());
 			return rs.next();
 		}
 	}
@@ -190,13 +199,13 @@ public class SlurmBgpsecModel {
 	 */
 	public static Long create(SlurmBgpsec newSlurmBgpsec, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			Long newId = getLastId(connection) + 1;
 			newSlurmBgpsec.setId(newId);
 			SlurmBgpsecDbObject stored = new SlurmBgpsecDbObject(newSlurmBgpsec);
 			stored.storeToDatabase(statement);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = statement.executeUpdate();
+			int created = executeUpdate(statement, getModelClass());
 			if (created < 1) {
 				return null;
 			}
@@ -214,10 +223,10 @@ public class SlurmBgpsecModel {
 	 */
 	public static int deleteById(Long id, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(DELETE_BY_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+			return executeUpdate(statement, getModelClass());
 		}
 	}
 
@@ -230,8 +239,8 @@ public class SlurmBgpsecModel {
 	 */
 	private static Long getLastId(Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_LAST_ID);
-		try (PreparedStatement statement = connection.prepareStatement(query)) {
-			ResultSet rs = statement.executeQuery();
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			ResultSet rs = executeQuery(statement, getModelClass());
 			// First in the table
 			if (!rs.next()) {
 				return 0L;

@@ -30,19 +30,20 @@ select r.rpr_id,
   join validation_run_rpki_repositories v on v.rpr_id = r.rpr_id
  where v.var_id = ?;
 
-#getByTalId
+#getIdsByTalId
 select rpr_id
   from rpki_repository_trust_anchors
  where tal_id = ?;
 
-#getAll
-select rpr_id,
-       rpr_updated_at,
-       rpr_location_uri,
-       rpr_parent_repository_id
-  from rpki_repository
- [order]
- [limit];
+#getByTalId
+select rr.rpr_id,
+       rr.rpr_updated_at,
+       rr.rpr_location_uri,
+       rr.rpr_parent_repository_id
+  from rpki_repository rr
+  join rpki_repository_trust_anchors rt on rt.rpr_id = rr.rpr_id
+ where rt.tal_id = ?
+ order by rr.rpr_location_uri, rr.rpr_id;
 
 #getByUnique
 select rpr_id,

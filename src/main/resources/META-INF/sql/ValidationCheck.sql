@@ -31,14 +31,3 @@ insert into validation_check_parameters (
        vcp_id,
        vcp_parameters)
 values (?, ?, ?);
-
-#getByUnique
-select vac_id,
-       var_id,
-       vac_location,
-       vac_status,
-       vac_key
-  from validation_check
- where 1 = 1
- [and]
- order by vac_id desc;

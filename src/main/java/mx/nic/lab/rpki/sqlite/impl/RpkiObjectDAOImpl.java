@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -14,9 +15,6 @@ import java.util.stream.Collectors;
 import com.google.common.primitives.UnsignedBytes;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
-import mx.nic.lab.rpki.db.exception.ValidationError;
-import mx.nic.lab.rpki.db.exception.ValidationErrorType;
-import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.EncodedRpkiObject;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.RpkiObject;
@@ -24,8 +22,6 @@ import mx.nic.lab.rpki.db.pojo.RpkiObject.Type;
 import mx.nic.lab.rpki.db.spi.RpkiObjectDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
 import mx.nic.lab.rpki.sqlite.model.RpkiObjectModel;
-import mx.nic.lab.rpki.sqlite.object.DatabaseObject.Operation;
-import mx.nic.lab.rpki.sqlite.object.RpkiObjectDbObject;
 import net.ripe.rpki.commons.crypto.CertificateRepositoryObject;
 import net.ripe.rpki.commons.crypto.cms.manifest.ManifestCms;
 import net.ripe.rpki.commons.validation.ValidationResult;
@@ -46,32 +42,9 @@ public class RpkiObjectDAOImpl implements RpkiObjectDAO {
 	}
 
 	@Override
-	public Long create(RpkiObject rpkiObject) throws ApiDataAccessException {
-		RpkiObjectDbObject rpkiObjectDb = new RpkiObjectDbObject(rpkiObject);
-		rpkiObjectDb.validate(Operation.CREATE);
-
+	public void bulkCreate(Set<RpkiObject> rpkiObjects) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			// Validate that the object doesn't exists
-			if (RpkiObjectModel.exist(rpkiObject, connection)) {
-				throw new ValidationException(
-						new ValidationError(RpkiObject.OBJECT_NAME, ValidationErrorType.OBJECT_EXISTS));
-			}
-			return RpkiObjectModel.create(rpkiObject, connection);
-		} catch (SQLException e) {
-			throw new ApiDataAccessException(e);
-		}
-	}
-
-	@Override
-	public boolean delete(RpkiObject rpkiObject) throws ApiDataAccessException {
-		try (Connection connection = DatabaseSession.getConnection()) {
-			// Validate that the object exists
-			if (!RpkiObjectModel.exist(rpkiObject, connection)) {
-				throw new ValidationException(
-						new ValidationError(RpkiObject.OBJECT_NAME, ValidationErrorType.OBJECT_NOT_EXISTS));
-			}
-			int deleted = RpkiObjectModel.delete(rpkiObject, connection);
-			return deleted > 0;
+			RpkiObjectModel.bulkCreate(rpkiObjects, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}

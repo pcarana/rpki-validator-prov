@@ -52,16 +52,15 @@ public class EncodedRpkiObjectDbObject extends EncodedRpkiObject implements Data
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		statement.setLong(1, getId());
 		if (getRpkiObjectId() != null) {
-			statement.setLong(2, getRpkiObjectId());
+			statement.setLong(1, getRpkiObjectId());
 		} else {
-			statement.setNull(2, Types.NUMERIC);
+			statement.setNull(1, Types.NUMERIC);
 		}
 		if (getEncoded() != null) {
-			statement.setBytes(3, getEncoded());
+			statement.setBytes(2, getEncoded());
 		} else {
-			statement.setNull(3, Types.BLOB);
+			statement.setNull(2, Types.BLOB);
 		}
 	}
 
