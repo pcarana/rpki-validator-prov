@@ -31,12 +31,6 @@ select rpr_id, rpo_id
   from rpki_repository_rpki_object
  where rpo_id = ?;
 
-#exist
-select 1
-  from rpki_object
- where 1 = 1
- [and];
-
 #create
 insert into rpki_object (
        rpo_type,
@@ -77,3 +71,8 @@ delete from rpki_object
 select rpo_id
   from rpki_object
  where rpo_sha256 = ?;
+
+#updateReached
+update rpki_object
+   set rpo_last_marked_reachable_at = ?
+ where rpo_id = ?;

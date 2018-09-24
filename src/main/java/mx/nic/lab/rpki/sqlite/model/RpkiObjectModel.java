@@ -48,7 +48,6 @@ public class RpkiObjectModel extends DatabaseModel {
 	private static final String GET_LOCATIONS = "getLocations";
 	private static final String GET_ENCODED_BY_OBJECT_ID = "getEncodedByRpkiObjectId";
 	private static final String GET_RPKI_REPO_REL = "getRpkiRepositoryRelation";
-	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
 	private static final String DELETE_UNREACHABLE = "deleteUnreachable";
 	private static final String CREATE_ENCODED = "createEncodedRpkiObject";
@@ -56,6 +55,7 @@ public class RpkiObjectModel extends DatabaseModel {
 	private static final String CREATE_RPKI_REPO_REL = "createRpkiRepositoryRelation";
 	private static final String DELETE_BY_RPKI_REPOSITORY_ID = "deleteByRpkiRepositoryId";
 	private static final String GET_ID_BY_SHA256 = "getIdBySha256";
+	private static final String UPDATE_LAST_REACH = "updateReached";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -242,42 +242,6 @@ public class RpkiObjectModel extends DatabaseModel {
 	}
 
 	/**
-	 * Check if a {@link RpkiObject} already exists
-	 * 
-	 * @param rpkiObject
-	 * @param connection
-	 * @return <code>boolean</code> to indicate if the object exists
-	 * @throws SQLException
-	 */
-	public static boolean exist(RpkiObject rpkiObject, Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(EXIST);
-		StringBuilder parameters = new StringBuilder();
-		int currentIdx = 1;
-		int typeIdx = -1;
-		int sha256Idx = -1;
-		if (rpkiObject.getType() != null) {
-			parameters.append(" and ").append(RpkiObjectDbObject.TYPE_COLUMN).append(" = ? ");
-			typeIdx = currentIdx++;
-		}
-		if (rpkiObject.getSha256() != null) {
-			parameters.append(" and ").append(RpkiObjectDbObject.SHA256_COLUMN).append(" = ? ");
-			sha256Idx = currentIdx++;
-		}
-		query = query.replace("[and]", parameters.toString());
-		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			if (typeIdx > 0) {
-				statement.setString(typeIdx, rpkiObject.getType().toString());
-			}
-			if (sha256Idx > 0) {
-				statement.setBytes(sha256Idx, rpkiObject.getSha256());
-			}
-
-			ResultSet rs = executeQuery(statement, getModelClass());
-			return rs.next();
-		}
-	}
-
-	/**
 	 * Creates a Set of {@link RpkiObject}s using a DB transaction
 	 * 
 	 * @param rpkiObjects
@@ -382,6 +346,35 @@ public class RpkiObjectModel extends DatabaseModel {
 			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
 			return executeUpdate(statement, getModelClass());
 		}
+	}
+
+	/**
+	 * Updates the lastMarkedReachableAt field of the received {@link Set} of
+	 * {@link RpkiObject}s
+	 * 
+	 * @param reachedObjects
+	 * @param connection
+	 * @return the number of affected rows
+	 * @throws SQLException
+	 */
+	public static int updateReachedObjects(Set<RpkiObject> reachedObjects, Connection connection) throws SQLException {
+		int result = 0;
+		String query = getQueryGroup().getQuery(UPDATE_LAST_REACH);
+		boolean originalAutoCommit = connection.getAutoCommit();
+		connection.setAutoCommit(false);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			for (RpkiObject updRpkiObject : reachedObjects) {
+				statement.setString(1, updRpkiObject.getLastMarkedReachableAt().toString());
+				statement.setLong(2, updRpkiObject.getId());
+				logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
+				result += executeUpdate(statement, getModelClass());
+			}
+		} finally {
+			// Commit what has been done
+			connection.commit();
+			connection.setAutoCommit(originalAutoCommit);
+		}
+		return result;
 	}
 
 	/**

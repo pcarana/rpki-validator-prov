@@ -122,4 +122,12 @@ public class RpkiObjectDAOImpl implements RpkiObjectDAO {
 		}
 	}
 
+	@Override
+	public int updateReachedObjects(Set<RpkiObject> reachedObjects) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return RpkiObjectModel.updateReachedObjects(reachedObjects, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
 }
