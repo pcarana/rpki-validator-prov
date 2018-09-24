@@ -138,7 +138,7 @@ public class DatabaseSession {
 
 	private static void testDatabase(SQLiteDataSource ds, String testQuery) throws SQLException {
 		try (Connection connection = ds.getConnection(); Statement statement = connection.createStatement();) {
-			logger.log(Level.INFO, "Executing QUERY: " + testQuery);
+			logger.log(Level.FINE, "Executing QUERY: " + testQuery);
 			ResultSet resultSet = statement.executeQuery(testQuery);
 
 			if (!resultSet.next()) {

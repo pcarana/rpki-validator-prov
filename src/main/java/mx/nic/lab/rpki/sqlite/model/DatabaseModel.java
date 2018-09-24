@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Main class that SHOULD be used to execute all the queries at DB in a
@@ -47,8 +49,10 @@ public class DatabaseModel {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static <T> ResultSet executeQuery(PreparedStatement statement, Class<T> clazz) throws SQLException {
+	public static <T> ResultSet executeQuery(PreparedStatement statement, Class<T> clazz, Logger logger)
+			throws SQLException {
 		synchronized (clazz) {
+			logger.log(Level.FINE, "Executing QUERY: " + statement.toString());
 			return statement.executeQuery();
 		}
 	}
@@ -63,8 +67,10 @@ public class DatabaseModel {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static <T> int executeUpdate(PreparedStatement statement, Class<T> clazz) throws SQLException {
+	public static <T> int executeUpdate(PreparedStatement statement, Class<T> clazz, Logger logger)
+			throws SQLException {
 		synchronized (clazz) {
+			logger.log(Level.FINE, "Executing QUERY: " + statement.toString());
 			return statement.executeUpdate();
 		}
 	}
@@ -78,9 +84,9 @@ public class DatabaseModel {
 	 * @return
 	 * @throws SQLException
 	 */
-	public static <T> Long getLastRowid(Connection connection, Class<T> clazz) throws SQLException {
+	public static <T> Long getLastRowid(Connection connection, Class<T> clazz, Logger logger) throws SQLException {
 		try (PreparedStatement statement = prepareStatement(connection, GET_LAST_ROWID_SQL, clazz)) {
-			ResultSet resultSet = executeQuery(statement, clazz);
+			ResultSet resultSet = executeQuery(statement, clazz, logger);
 			return resultSet.getLong(1);
 		}
 	}

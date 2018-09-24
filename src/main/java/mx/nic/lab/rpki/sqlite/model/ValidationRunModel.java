@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.RpkiRepository;
@@ -77,8 +76,7 @@ public class ValidationRunModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -105,8 +103,7 @@ public class ValidationRunModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, talId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<ValidationRun> validationRuns = new ArrayList<ValidationRun>();
 			while (rs.next()) {
 				ValidationRunDbObject validationRun = new ValidationRunDbObject(rs);
@@ -131,8 +128,7 @@ public class ValidationRunModel extends DatabaseModel {
 			statement.setLong(1, validationRun.getId());
 			statement.setString(2, validationRun.getType().toString());
 			statement.setLong(3, validationRun.getTalId());
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return executeUpdate(statement, getModelClass());
+			return executeUpdate(statement, getModelClass(), logger);
 		}
 	}
 
@@ -153,10 +149,9 @@ public class ValidationRunModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			ValidationRunDbObject stored = new ValidationRunDbObject(newValidationRun);
 			stored.storeToDatabase(statement);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			if (created > 0) {
-				newValidationRun.setId(getLastRowid(connection, getModelClass()));
+				newValidationRun.setId(getLastRowid(connection, getModelClass(), logger));
 				storeRelatedObjects(newValidationRun, connection);
 				result = newValidationRun.getId();
 			}
@@ -185,8 +180,7 @@ public class ValidationRunModel extends DatabaseModel {
 			ValidationRunDbObject stored = new ValidationRunDbObject(validationRun);
 			stored.storeToDatabase(statement);
 			statement.setLong(statement.getParameterMetaData().getParameterCount(), validationRun.getId());
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int updated = executeUpdate(statement, getModelClass());
+			int updated = executeUpdate(statement, getModelClass(), logger);
 			storeRelatedObjects(validationRun, connection);
 			result = updated;
 		} finally {
@@ -263,8 +257,7 @@ public class ValidationRunModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, validationRunId);
 			statement.setLong(2, rpkiRepositoryId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
 		}
 	}

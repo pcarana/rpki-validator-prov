@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
@@ -77,8 +76,7 @@ public class RoaModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -104,8 +102,7 @@ public class RoaModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, RoaDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Roa> roas = new ArrayList<Roa>();
 			while (rs.next()) {
 				RoaDbObject roa = new RoaDbObject(rs);
@@ -132,8 +129,7 @@ public class RoaModel extends DatabaseModel {
 			statement.setBytes(1, prefix);
 			statement.setInt(2, prefixLength);
 			statement.setInt(3, prefixLength);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -167,8 +163,7 @@ public class RoaModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, prefix);
 			statement.setInt(2, prefixLength);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Roa> roas = new ArrayList<Roa>();
 			while (rs.next()) {
 				RoaDbObject roa = new RoaDbObject(rs);
@@ -200,8 +195,7 @@ public class RoaModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, prefix);
 			statement.setInt(2, prefixLength);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Roa> roas = new ArrayList<Roa>();
 			while (rs.next()) {
 				RoaDbObject roa = new RoaDbObject(rs);
@@ -226,7 +220,7 @@ public class RoaModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(EXIST_ASN);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, asn);
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			return rs.next();
 		}
 	}
@@ -244,8 +238,7 @@ public class RoaModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			RoaDbObject stored = new RoaDbObject(newRoa);
 			stored.storeToDatabase(statement);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
 		}
 	}
@@ -263,8 +256,7 @@ public class RoaModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_RPKI_OBJECT_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiObjectId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Roa> roas = new ArrayList<Roa>();
 			while (rs.next()) {
 				RoaDbObject talFile = new RoaDbObject(rs);

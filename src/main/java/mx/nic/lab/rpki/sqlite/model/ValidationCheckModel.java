@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.ValidationCheck;
@@ -77,12 +76,11 @@ public class ValidationCheckModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			ValidationCheckDbObject stored = new ValidationCheckDbObject(newValidationCheck);
 			stored.storeToDatabase(statement);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			if (created < 1) {
 				return null;
 			}
-			newValidationCheck.setId(getLastRowid(connection, getModelClass()));
+			newValidationCheck.setId(getLastRowid(connection, getModelClass(), logger));
 			storeRelatedObjects(newValidationCheck, connection);
 			return newValidationCheck.getId();
 		}
@@ -101,8 +99,7 @@ public class ValidationCheckModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_VALIDATION_RUN_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, validationRunId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			Set<ValidationCheck> validationChecks = new HashSet<>();
 			while (rs.next()) {
 				ValidationCheckDbObject validationCheck = new ValidationCheckDbObject(rs);
@@ -125,8 +122,7 @@ public class ValidationCheckModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_PARAMETERS);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, validationCheckId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<String> parameters = new ArrayList<>();
 			while (rs.next()) {
 				parameters.add(rs.getString(ValidationCheckDbObject.PARAMETERS_COLUMN));
@@ -185,8 +181,7 @@ public class ValidationCheckModel extends DatabaseModel {
 			statement.setLong(1, validationCheckId);
 			statement.setLong(2, newId);
 			statement.setString(3, parameter);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
 		}
 	}
@@ -204,7 +199,7 @@ public class ValidationCheckModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_LAST_PARAMETER_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, validationCheckId);
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			// First in the table
 			if (!rs.next()) {
 				return 0L;

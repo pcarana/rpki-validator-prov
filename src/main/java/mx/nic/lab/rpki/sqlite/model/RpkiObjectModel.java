@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.EncodedRpkiObject;
@@ -97,8 +96,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		query = Util.getQueryWithPaging(query, null, null);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -128,8 +126,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		query = Util.getQueryWithPaging(query, null, null);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, sha256);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -170,8 +167,7 @@ public class RpkiObjectModel extends DatabaseModel {
 			for (byte[] sha256 : sha256Set) {
 				statement.setBytes(index++, sha256);
 			}
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<RpkiObject> rpkiObjects = new ArrayList<RpkiObject>();
 			while (rs.next()) {
 				RpkiObjectDbObject rpkiObject = new RpkiObjectDbObject(rs);
@@ -203,8 +199,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setString(1, type.toString());
 			statement.setBytes(2, authorityKeyIdentifier);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -231,8 +226,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		query = Util.getQueryWithPaging(query, null, null);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, subjectKeyIdentifier);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -256,8 +250,7 @@ public class RpkiObjectModel extends DatabaseModel {
 			for (RpkiObject newRpkiObject : rpkiObjects) {
 				RpkiObjectDbObject stored = new RpkiObjectDbObject(newRpkiObject);
 				stored.storeToDatabase(statement);
-				logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-				executeUpdate(statement, getModelClass());
+				executeUpdate(statement, getModelClass(), logger);
 				newRpkiObject.setId(getIdBySha256(newRpkiObject.getSha256(), connection));
 				storeRelatedObjects(newRpkiObject, connection);
 			}
@@ -282,8 +275,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(DELETE_UNREACHABLE);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setString(1, unreachableSince.toString());
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return executeUpdate(statement, getModelClass());
+			return executeUpdate(statement, getModelClass(), logger);
 		}
 	}
 
@@ -301,8 +293,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_ENCODED_BY_OBJECT_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiObjectId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -326,8 +317,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiRepositoryId);
 			statement.setLong(2, rpkiObjectId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return executeUpdate(statement, getModelClass());
+			return executeUpdate(statement, getModelClass(), logger);
 		}
 	}
 
@@ -343,8 +333,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(DELETE_BY_RPKI_REPOSITORY_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiRepositoryId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return executeUpdate(statement, getModelClass());
+			return executeUpdate(statement, getModelClass(), logger);
 		}
 	}
 
@@ -366,8 +355,7 @@ public class RpkiObjectModel extends DatabaseModel {
 			for (RpkiObject updRpkiObject : reachedObjects) {
 				statement.setString(1, updRpkiObject.getLastMarkedReachableAt().toString());
 				statement.setLong(2, updRpkiObject.getId());
-				logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-				result += executeUpdate(statement, getModelClass());
+				result += executeUpdate(statement, getModelClass(), logger);
 			}
 		} finally {
 			// Commit what has been done
@@ -436,8 +424,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_RPKI_REPO_REL);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiObjectId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			Set<Long> result = new HashSet<>();
 			while (rs.next()) {
 				result.add(rs.getLong("rpr_id"));
@@ -458,8 +445,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_LOCATIONS);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiObjectId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			SortedSet<String> result = new TreeSet<>();
 			while (rs.next()) {
 				result.add(rs.getString("rpo_locations"));
@@ -484,8 +470,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			EncodedRpkiObjectDbObject stored = new EncodedRpkiObjectDbObject(newEncodedRpkiObject);
 			stored.storeToDatabase(statement);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
 		}
 	}
@@ -505,8 +490,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiObjectId);
 			statement.setString(2, location);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
 		}
 	}
@@ -542,7 +526,7 @@ public class RpkiObjectModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_ID_BY_SHA256);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, sha256);
-			ResultSet resultSet = executeQuery(statement, getModelClass());
+			ResultSet resultSet = executeQuery(statement, getModelClass(), logger);
 			if (!resultSet.next()) {
 				return null;
 			}

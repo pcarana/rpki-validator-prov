@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.RpkiRepository;
@@ -84,8 +83,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			RpkiRepositoryDbObject stored = new RpkiRepositoryDbObject(newRpkiRepository);
 			stored.storeToDatabase(statement);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			if (created < 1) {
 				return null;
 			}
@@ -108,8 +106,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -135,8 +132,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_URI);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setString(1, uri);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -164,8 +160,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, talId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<RpkiRepository> rpkiRepositories = new ArrayList<RpkiRepository>();
 			while (rs.next()) {
 				RpkiRepositoryDbObject rpkiRepository = new RpkiRepositoryDbObject(rs);
@@ -189,8 +184,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_VALIDATION_RUN_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, validationRunId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			Set<Long> rpkiRepositories = new HashSet<>();
 			while (rs.next()) {
 				RpkiRepositoryDbObject rpkiRepository = new RpkiRepositoryDbObject(rs);
@@ -217,8 +211,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 				statement.setNull(1, Types.NUMERIC);
 			}
 			statement.setLong(2, rpkiRepository.getId());
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return executeUpdate(statement, getModelClass());
+			return executeUpdate(statement, getModelClass(), logger);
 		}
 	}
 
@@ -238,8 +231,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(DELETE_BY_TAL_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, talId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return executeUpdate(statement, getModelClass());
+			return executeUpdate(statement, getModelClass(), logger);
 		}
 	}
 
@@ -290,8 +282,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiRepositoryId);
 			statement.setLong(2, talId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
 		}
 	}
@@ -336,7 +327,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 	private static RpkiRepositoryDbObject getByUniqueFields(RpkiRepository rpkiRepository, Connection connection)
 			throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(rpkiRepository, GET_BY_UNIQUE, connection)) {
-			ResultSet resultSet = executeQuery(statement, getModelClass());
+			ResultSet resultSet = executeQuery(statement, getModelClass(), logger);
 			RpkiRepositoryDbObject found = new RpkiRepositoryDbObject(resultSet);
 			loadRelatedObjects(found, connection);
 			return found;
@@ -355,8 +346,7 @@ public class RpkiRepositoryModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_IDS_BY_TAL_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, talId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Long> rpkiRepositories = new ArrayList<>();
 			while (rs.next()) {
 				rpkiRepositories.add(rs.getLong(RpkiRepositoryDbObject.ID_COLUMN));

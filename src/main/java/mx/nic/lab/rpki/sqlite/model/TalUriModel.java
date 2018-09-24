@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.TalUri;
@@ -73,8 +72,7 @@ public class TalUriModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_TAL_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, talId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<TalUri> talUris = new ArrayList<TalUri>();
 			while (rs.next()) {
 				TalUriDbObject talUri = new TalUriDbObject(rs);
@@ -100,8 +98,7 @@ public class TalUriModel extends DatabaseModel {
 			newTalUri.setId(newId);
 			TalUriDbObject stored = new TalUriDbObject(newTalUri);
 			stored.storeToDatabase(statement);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			if (created < 1) {
 				return null;
 			}
@@ -119,7 +116,7 @@ public class TalUriModel extends DatabaseModel {
 	private static Long getLastId(Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_LAST_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			// First in the table
 			if (!rs.next()) {
 				return 0L;

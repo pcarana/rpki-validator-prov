@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.Gbr;
@@ -85,8 +84,7 @@ public class GbrModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, parentCaObject.getSubjectKeyIdentifier());
 			statement.setString(2, RpkiObject.Type.GBR.toString());
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			while (rs.next()) {
 				GbrDbObject gbr = new GbrDbObject(rs);
 				gbr.setRpkiObject(RpkiObjectModel.getById(gbr.getRpkiObjectId(), connection));
@@ -109,8 +107,7 @@ public class GbrModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			GbrDbObject stored = new GbrDbObject(newGbr);
 			stored.storeToDatabase(statement);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
 		}
 	}

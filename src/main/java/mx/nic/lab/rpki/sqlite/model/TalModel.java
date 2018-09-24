@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
@@ -80,8 +79,7 @@ public class TalModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -107,8 +105,7 @@ public class TalModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, TalDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Tal> tals = new ArrayList<Tal>();
 			while (rs.next()) {
 				TalDbObject tal = new TalDbObject(rs);
@@ -130,8 +127,7 @@ public class TalModel extends DatabaseModel {
 	 */
 	public static Tal getExistentTal(Tal tal, Connection connection) throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(tal, GET_BY_UNIQUE, connection)) {
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (!rs.next()) {
 				return null;
 			}
@@ -155,7 +151,7 @@ public class TalModel extends DatabaseModel {
 	 */
 	public static boolean exist(Tal tal, Connection connection) throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(tal, EXIST, connection)) {
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			return rs.next();
 		}
 	}
@@ -173,8 +169,7 @@ public class TalModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			TalDbObject stored = new TalDbObject(newTal);
 			stored.storeToDatabase(statement);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			int created = executeUpdate(statement, getModelClass());
+			int created = executeUpdate(statement, getModelClass(), logger);
 			if (created < 1) {
 				return null;
 			}
@@ -200,8 +195,7 @@ public class TalModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(DELETE);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, tal.getId());
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return executeUpdate(statement, getModelClass());
+			return executeUpdate(statement, getModelClass(), logger);
 		}
 	}
 
@@ -217,8 +211,7 @@ public class TalModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_BY_RPKI_REPO_ID);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, rpkiRepositoryId);
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			ResultSet rs = executeQuery(statement, getModelClass());
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			Set<Tal> tals = new HashSet<>();
 			while (rs.next()) {
 				TalDbObject tal = new TalDbObject(rs);
@@ -242,8 +235,7 @@ public class TalModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, tal.getLoadedCer());
 			statement.setLong(2, tal.getId());
-			logger.log(Level.INFO, "Executing QUERY: " + statement.toString());
-			return executeUpdate(statement, getModelClass());
+			return executeUpdate(statement, getModelClass(), logger);
 		}
 	}
 
@@ -316,7 +308,7 @@ public class TalModel extends DatabaseModel {
 	 */
 	private static TalDbObject getByUniqueFields(Tal tal, Connection connection) throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(tal, GET_BY_UNIQUE, connection)) {
-			ResultSet resultSet = executeQuery(statement, getModelClass());
+			ResultSet resultSet = executeQuery(statement, getModelClass(), logger);
 			TalDbObject found = new TalDbObject(resultSet);
 			loadRelatedObjects(found, false, connection);
 			return found;
