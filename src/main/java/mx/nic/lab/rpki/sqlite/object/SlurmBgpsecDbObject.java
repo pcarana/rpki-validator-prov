@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bouncycastle.util.encoders.Hex;
+
 import mx.nic.lab.rpki.db.exception.ValidationError;
 import mx.nic.lab.rpki.db.exception.ValidationErrorType;
 import mx.nic.lab.rpki.db.exception.ValidationException;
@@ -171,7 +173,13 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 			}
 			if (ski != null) {
 				try {
-					Base64.getUrlDecoder().decode(ski);
+					byte[] decodedSki = Base64.getUrlDecoder().decode(ski);
+					byte[] hexBytes = Hex.decode(decodedSki);
+					// Is the 160-bit SHA-1 hash (RFC 8416 section 3.3.2 citing RFC 6487 section
+					// 4.8.2)
+					if (hexBytes.length != 20) {
+						throw new IllegalArgumentException();
+					}
 				} catch (IllegalArgumentException e) {
 					validationErrors
 							.add(new ValidationError(OBJECT_NAME, SKI, ski, ValidationErrorType.UNEXPECTED_VALUE));
