@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 
 import mx.nic.lab.rpki.db.exception.ValidationError;
@@ -181,6 +182,9 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 						throw new IllegalArgumentException();
 					}
 				} catch (IllegalArgumentException e) {
+					validationErrors
+							.add(new ValidationError(OBJECT_NAME, SKI, ski, ValidationErrorType.UNEXPECTED_VALUE));
+				} catch (DecoderException e) {
 					validationErrors
 							.add(new ValidationError(OBJECT_NAME, SKI, ski, ValidationErrorType.UNEXPECTED_VALUE));
 				}
