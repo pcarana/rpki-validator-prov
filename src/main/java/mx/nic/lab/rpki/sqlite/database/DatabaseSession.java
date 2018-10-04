@@ -31,8 +31,19 @@ import mx.nic.lab.rpki.db.exception.InitializationException;
  */
 public class DatabaseSession {
 
+	/**
+	 * Milliseconds that the implementation will wait to retry in case of a DB lock
+	 */
+	public static final long BUSY_RETRY_MS = 200L;
+
+	/**
+	 * Data source to get/store data
+	 */
 	private static DataSource dataSource;
 
+	/**
+	 * Used for logging
+	 */
 	private static final Logger logger = Logger.getLogger(DatabaseSession.class.getName());
 
 	/**
@@ -140,7 +151,6 @@ public class DatabaseSession {
 		sqliteDataSource.setUrl(url);
 		sqliteDataSource.setEnforceForeignKeys(true);
 		sqliteDataSource.getConfig().setOpenMode(SQLiteOpenMode.FULLMUTEX);
-		sqliteDataSource.getConfig().setBusyTimeout("200");
 
 		// Load the test query, if not present then load the most common
 		// (http://stackoverflow.com/questions/3668506)

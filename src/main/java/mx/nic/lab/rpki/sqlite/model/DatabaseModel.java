@@ -7,6 +7,10 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.sqlite.SQLiteErrorCode;
+
+import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
+
 /**
  * Main class that SHOULD be used to execute all the queries at DB in a
  * synchronous way; this is done to avoid an SQLITE_BUSY error when the database
@@ -36,7 +40,23 @@ public class DatabaseModel {
 	public static <T> PreparedStatement prepareStatement(Connection connection, String sql, Class<T> clazz)
 			throws SQLException {
 		synchronized (clazz) {
-			return connection.prepareStatement(sql);
+			PreparedStatement result = null;
+			while (true) {
+				try {
+					result = connection.prepareStatement(sql);
+					break;
+				} catch (SQLException e) {
+					if (e.getErrorCode() != SQLiteErrorCode.SQLITE_BUSY.code) {
+						throw e;
+					}
+					try {
+						Thread.sleep(DatabaseSession.BUSY_RETRY_MS);
+					} catch (InterruptedException ie) {
+						// Keep trying
+					}
+				}
+			}
+			return result;
 		}
 	}
 
@@ -52,8 +72,26 @@ public class DatabaseModel {
 	public static <T> ResultSet executeQuery(PreparedStatement statement, Class<T> clazz, Logger logger)
 			throws SQLException {
 		synchronized (clazz) {
+			ResultSet result = null;
 			logger.log(Level.FINE, "Executing QUERY: " + statement.toString());
-			return statement.executeQuery();
+			while (true) {
+				try {
+					result = statement.executeQuery();
+					break;
+				} catch (SQLException e) {
+					if (e.getErrorCode() != SQLiteErrorCode.SQLITE_BUSY.code) {
+						throw e;
+					}
+					try {
+						logger.log(Level.FINE,
+								"Database is locked, sleeping " + DatabaseSession.BUSY_RETRY_MS + "ms to try again");
+						Thread.sleep(DatabaseSession.BUSY_RETRY_MS);
+					} catch (InterruptedException ie) {
+						// Keep trying
+					}
+				}
+			}
+			return result;
 		}
 	}
 
@@ -70,8 +108,26 @@ public class DatabaseModel {
 	public static <T> int executeUpdate(PreparedStatement statement, Class<T> clazz, Logger logger)
 			throws SQLException {
 		synchronized (clazz) {
+			int result = -1;
 			logger.log(Level.FINE, "Executing QUERY: " + statement.toString());
-			return statement.executeUpdate();
+			while (true) {
+				try {
+					result = statement.executeUpdate();
+					break;
+				} catch (SQLException e) {
+					if (e.getErrorCode() != SQLiteErrorCode.SQLITE_BUSY.code) {
+						throw e;
+					}
+					try {
+						logger.log(Level.FINE,
+								"Database is locked, sleeping " + DatabaseSession.BUSY_RETRY_MS + "ms to try again");
+						Thread.sleep(DatabaseSession.BUSY_RETRY_MS);
+					} catch (InterruptedException ie) {
+						// Keep trying
+					}
+				}
+			}
+			return result;
 		}
 	}
 
