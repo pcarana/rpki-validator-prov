@@ -175,7 +175,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 			Integer prefixLength = this.getPrefixLength();
 			Integer prefixMaxLength = this.getPrefixMaxLength();
 			String comment = this.getComment();
-
+			boolean keepValidating = true;
 			if (type == null) {
 				validationErrors.add(new ValidationError(OBJECT_NAME, TYPE, null, ValidationErrorType.NULL));
 			} else if (type == TYPE_FILTER) {
@@ -227,15 +227,22 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 						0, 4294967295L));
 			}
 			if (prefixLength != null) {
-				validatePrefixLength(startPrefix, prefixLength, PREFIX_LENGTH, validationErrors);
+				keepValidating = keepValidating
+						&& validatePrefixLength(startPrefix, prefixLength, PREFIX_LENGTH, validationErrors);
 				// If max length is indicated, it can't be grater than length
 				if (prefixMaxLength != null && type == TYPE_ASSERTION && prefixMaxLength < prefixLength) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, PREFIX_MAX_LENGTH, prefixMaxLength,
 							ValidationErrorType.VALUE_OUT_OF_RANGE, prefixLength, prefixLength));
+					keepValidating = false;
 				}
 			}
 			if (prefixMaxLength != null && type == TYPE_ASSERTION) {
-				validatePrefixLength(startPrefix, prefixMaxLength, PREFIX_MAX_LENGTH, validationErrors);
+				keepValidating = keepValidating
+						&& validatePrefixLength(startPrefix, prefixMaxLength, PREFIX_MAX_LENGTH, validationErrors);
+			}
+			if (!keepValidating) {
+				// There was an error that won't let the validations run normally
+				throw new ValidationException(validationErrors);
 			}
 			// If there's a Start Prefix, then it must exist an End Prefix
 			if (startPrefix != null) {
@@ -268,8 +275,9 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 	 * @param prefixLength
 	 * @param prefixLengthFieldId
 	 * @param validationErrors
+	 * @return <code>boolean</code> to indicate if there was an error
 	 */
-	private void validatePrefixLength(byte[] prefix, int prefixLength, String prefixLengthFieldId,
+	private boolean validatePrefixLength(byte[] prefix, int prefixLength, String prefixLengthFieldId,
 			List<ValidationError> validationErrors) {
 		// Prefix length according to IP type
 		int min = 0;
@@ -280,12 +288,14 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 		} catch (UnknownHostException e) {
 			validationErrors
 					.add(new ValidationError(OBJECT_NAME, START_PREFIX, prefix, ValidationErrorType.UNEXPECTED_TYPE));
-			return;
+			return false;
 		}
 		if (!(prefixLength >= min && prefixLength <= max)) {
 			validationErrors.add(new ValidationError(OBJECT_NAME, prefixLengthFieldId, prefix,
 					ValidationErrorType.VALUE_OUT_OF_RANGE, min, max));
+			return false;
 		}
+		return true;
 	}
 
 	/**
