@@ -5,9 +5,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Enumeration;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,6 +63,25 @@ public class DatabaseSession {
 		logger.info("I could not find the API data source in the context. "
 				+ "This won't be a problem if I can find it in the configuration. Attempting that now... ");
 		dataSource = loadDataSourceFromProperties(config);
+	}
+
+	/**
+	 * End the DB connection and unregister driver
+	 */
+	public static void endConnection() {
+		if (dataSource != null) {
+			Enumeration<Driver> drivers = DriverManager.getDrivers();
+			while (drivers.hasMoreElements()) {
+				Driver driver = drivers.nextElement();
+				try {
+					DriverManager.deregisterDriver(driver);
+					logger.log(Level.INFO, String.format("deregistering jdbc driver: %s", driver));
+				} catch (SQLException e) {
+					logger.log(Level.SEVERE, String.format("Error deregistering driver %s", driver), e);
+				}
+			}
+			dataSource = null;
+		}
 	}
 
 	private static DataSource findDataSource(Properties config) {

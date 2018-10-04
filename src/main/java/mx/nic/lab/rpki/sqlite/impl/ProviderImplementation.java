@@ -29,6 +29,11 @@ public class ProviderImplementation implements DataAccessImplementation {
 	}
 
 	@Override
+	public void terminate() {
+		DatabaseSession.endConnection();
+	}
+
+	@Override
 	public TalDAO getTalDAO() {
 		return new TalDAOImpl();
 	}
