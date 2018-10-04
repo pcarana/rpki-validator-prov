@@ -16,6 +16,7 @@ import org.bouncycastle.util.encoders.Hex;
 import mx.nic.lab.rpki.db.exception.ValidationError;
 import mx.nic.lab.rpki.db.exception.ValidationErrorType;
 import mx.nic.lab.rpki.db.exception.ValidationException;
+import mx.nic.lab.rpki.db.pojo.ApiObject;
 import mx.nic.lab.rpki.db.pojo.SlurmBgpsec;
 
 /**
@@ -30,6 +31,9 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 	public static final String ROUTER_PUBLIC_KEY_COLUMN = "slb_public_key";
 	public static final String TYPE_COLUMN = "slb_type";
 	public static final String COMMENT_COLUMN = "slb_comment";
+
+	public static final int COMMENT_MIN_LENGTH = 1;
+	public static final int COMMENT_MAX_LENGTH = 2000;
 
 	/**
 	 * Mapping of the {@link SlurmBgpsec} properties to its corresponding DB column
@@ -164,13 +168,19 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 				validationErrors
 						.add(new ValidationError(OBJECT_NAME, TYPE, type, ValidationErrorType.UNEXPECTED_VALUE));
 			}
+			if (asn != null) {
+				if (asn < ApiObject.ASN_MIN_VALUE || asn > ApiObject.ASN_MAX_VALUE) {
+					validationErrors.add(new ValidationError(OBJECT_NAME, ASN, asn,
+							ValidationErrorType.VALUE_OUT_OF_RANGE, ApiObject.ASN_MIN_VALUE, ApiObject.ASN_MAX_VALUE));
+				}
+			}
 			// "It is RECOMMENDED that an explanatory comment is also included" (RFC 8416)
 			if (comment == null || comment.trim().isEmpty()) {
 				validationErrors.add(new ValidationError(OBJECT_NAME, COMMENT, null, ValidationErrorType.NULL));
-			} else if (!(comment.trim().length() > 0 && comment.trim().length() <= 2000)) {
-				// MAX 2000 (randomly picked to avoid abuse)
+			} else if (!(comment.trim().length() >= COMMENT_MIN_LENGTH
+					&& comment.trim().length() <= COMMENT_MAX_LENGTH)) {
 				validationErrors.add(new ValidationError(OBJECT_NAME, COMMENT, comment,
-						ValidationErrorType.LENGTH_OUT_OF_RANGE, 1, 2000));
+						ValidationErrorType.LENGTH_OUT_OF_RANGE, COMMENT_MIN_LENGTH, COMMENT_MAX_LENGTH));
 			}
 			if (ski != null) {
 				try {
