@@ -232,10 +232,6 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 							.add(new ValidationError(OBJECT_NAME, PREFIX_LENGTH, null, ValidationErrorType.NULL));
 				}
 			}
-			if (asn != null && !(asn >= ApiObject.ASN_MIN_VALUE && asn <= ApiObject.ASN_MAX_VALUE)) {
-				validationErrors.add(new ValidationError(OBJECT_NAME, ASN, asn, ValidationErrorType.VALUE_OUT_OF_RANGE,
-						ApiObject.ASN_MIN_VALUE, ApiObject.ASN_MAX_VALUE));
-			}
 			if (prefixLength != null) {
 				keepValidating = keepValidating
 						&& validatePrefixLength(startPrefix, prefixLength, PREFIX_LENGTH, validationErrors);
