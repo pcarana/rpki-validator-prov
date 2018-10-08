@@ -184,7 +184,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 			}
 			if (ski != null) {
 				try {
-					byte[] decodedSki = Base64.getUrlDecoder().decode(ski);
+					byte[] decodedSki = Base64.getDecoder().decode(ski);
 					byte[] hexBytes = Hex.decode(decodedSki);
 					// Is the 160-bit SHA-1 hash (RFC 8416 section 3.3.2 citing RFC 6487 section
 					// 4.8.2)
@@ -201,7 +201,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 			}
 			if (routerPublicKey != null) {
 				try {
-					Base64.getUrlDecoder().decode(routerPublicKey);
+					Base64.getDecoder().decode(routerPublicKey);
 				} catch (IllegalArgumentException e) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, ROUTER_PUBLIC_KEY, routerPublicKey,
 							ValidationErrorType.UNEXPECTED_VALUE));
