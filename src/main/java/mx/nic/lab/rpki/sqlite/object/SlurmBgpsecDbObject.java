@@ -99,31 +99,30 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 
 	@Override
 	public void storeToDatabase(PreparedStatement statement) throws SQLException {
-		statement.setLong(1, getId());
 		if (getAsn() != null) {
-			statement.setLong(2, getAsn());
+			statement.setLong(1, getAsn());
 		} else {
-			statement.setNull(2, Types.NUMERIC);
+			statement.setNull(1, Types.NUMERIC);
 		}
 		if (getSki() != null) {
-			statement.setString(3, getSki());
+			statement.setString(2, getSki());
+		} else {
+			statement.setNull(2, Types.VARCHAR);
+		}
+		if (getRouterPublicKey() != null) {
+			statement.setString(3, getRouterPublicKey());
 		} else {
 			statement.setNull(3, Types.VARCHAR);
 		}
-		if (getRouterPublicKey() != null) {
-			statement.setString(4, getRouterPublicKey());
-		} else {
-			statement.setNull(4, Types.VARCHAR);
-		}
 		if (getType() != null) {
-			statement.setInt(5, getType());
+			statement.setInt(4, getType());
 		} else {
-			statement.setNull(5, Types.INTEGER);
+			statement.setNull(4, Types.INTEGER);
 		}
 		if (getComment() != null) {
-			statement.setString(6, getComment());
+			statement.setString(5, getComment());
 		} else {
-			statement.setNull(6, Types.VARCHAR);
+			statement.setNull(5, Types.VARCHAR);
 		}
 	}
 

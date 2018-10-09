@@ -40,10 +40,6 @@ select slp_id,
 [order]
 [limit];
 
-#getLastId
-select max(slp_id)
-  from slurm_prefix;
-
 #exist
 select 1
   from slurm_prefix
@@ -52,7 +48,6 @@ select 1
 
 #create
 insert into slurm_prefix (
-       slp_id,
        slp_asn,
        slp_prefix_text,
        slp_start_prefix,
@@ -61,7 +56,7 @@ insert into slurm_prefix (
        slp_prefix_max_length,
        slp_type,
        slp_comment)
-values (?, ?, ?, ?, ?, ?, ?, ?, ?);
+values (?, ?, ?, ?, ?, ?, ?, ?);
 
 #deleteById
 delete from slurm_prefix where slp_id = ?;

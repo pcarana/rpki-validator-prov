@@ -34,7 +34,6 @@ public class SlurmPrefixModel extends DatabaseModel {
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_ALL = "getAll";
 	private static final String GET_ALL_BY_TYPE = "getAllByType";
-	private static final String GET_LAST_ID = "getLastId";
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
 	private static final String DELETE_BY_ID = "deleteById";
@@ -193,26 +192,21 @@ public class SlurmPrefixModel extends DatabaseModel {
 	}
 
 	/**
-	 * Creates a new {@link SlurmPrefix} returns null if the object couldn't be
-	 * created.
+	 * Creates a new {@link SlurmPrefix} returns a <code>boolean</code> to indicate
+	 * success
 	 * 
 	 * @param newSlurmPrefix
 	 * @param connection
-	 * @return The ID of the {@link SlurmPrefix} created
+	 * @return <code>boolean</code> to indicate success
 	 * @throws SQLException
 	 */
-	public static Long create(SlurmPrefix newSlurmPrefix, Connection connection) throws SQLException {
+	public static boolean create(SlurmPrefix newSlurmPrefix, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(CREATE);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			Long newId = getLastId(connection) + 1;
-			newSlurmPrefix.setId(newId);
 			SlurmPrefixDbObject stored = new SlurmPrefixDbObject(newSlurmPrefix);
 			stored.storeToDatabase(statement);
 			int created = executeUpdate(statement, getModelClass(), logger);
-			if (created < 1) {
-				return null;
-			}
-			return newId;
+			return created > 0;
 		}
 	}
 
@@ -229,25 +223,6 @@ public class SlurmPrefixModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
 			return executeUpdate(statement, getModelClass(), logger);
-		}
-	}
-
-	/**
-	 * Get the last registered ID
-	 * 
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static Long getLastId(Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(GET_LAST_ID);
-		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			ResultSet rs = executeQuery(statement, getModelClass(), logger);
-			// First in the table
-			if (!rs.next()) {
-				return 0L;
-			}
-			return rs.getLong(1);
 		}
 	}
 

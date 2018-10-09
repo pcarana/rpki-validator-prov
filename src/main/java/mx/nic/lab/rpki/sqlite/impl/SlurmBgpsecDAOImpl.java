@@ -50,7 +50,7 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 	}
 
 	@Override
-	public Long create(SlurmBgpsec newSlurmBgpsec) throws ApiDataAccessException {
+	public boolean create(SlurmBgpsec newSlurmBgpsec) throws ApiDataAccessException {
 		SlurmBgpsecDbObject slurmBgpsecDb = new SlurmBgpsecDbObject(newSlurmBgpsec);
 		slurmBgpsecDb.validate(Operation.CREATE);
 

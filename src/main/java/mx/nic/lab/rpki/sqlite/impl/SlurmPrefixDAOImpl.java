@@ -50,7 +50,7 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 	}
 
 	@Override
-	public Long create(SlurmPrefix newSlurmPrefix) throws ApiDataAccessException {
+	public boolean create(SlurmPrefix newSlurmPrefix) throws ApiDataAccessException {
 		newSlurmPrefix.setEndPrefix(calculateEndPrefix(newSlurmPrefix));
 		SlurmPrefixDbObject slurmPrefixDb = new SlurmPrefixDbObject(newSlurmPrefix);
 		slurmPrefixDb.validate(Operation.CREATE);
