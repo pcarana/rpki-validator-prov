@@ -25,8 +25,8 @@ public class SlurmModel {
 	 * @throws SQLException
 	 */
 	public static Slurm getAll(Connection connection) throws SQLException {
-		List<SlurmPrefix> prefixes = SlurmPrefixModel.getAll(null, connection);
-		List<SlurmBgpsec> bgpsecs = SlurmBgpsecModel.getAll(null, connection);
+		List<SlurmPrefix> prefixes = SlurmPrefixModel.getAll(null, connection).getResults();
+		List<SlurmBgpsec> bgpsecs = SlurmBgpsecModel.getAll(null, connection).getResults();
 		if (prefixes.isEmpty() && bgpsecs.isEmpty()) {
 			return null;
 		}

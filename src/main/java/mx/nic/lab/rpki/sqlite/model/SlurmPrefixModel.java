@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import mx.nic.lab.rpki.db.pojo.ListResult;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.SlurmPrefix;
 import mx.nic.lab.rpki.sqlite.database.QueryGroup;
@@ -34,6 +35,8 @@ public class SlurmPrefixModel extends DatabaseModel {
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_ALL = "getAll";
 	private static final String GET_ALL_BY_TYPE = "getAllByType";
+	private static final String GET_ALL_COUNT = "getAllCount";
+	private static final String GET_ALL_BY_TYPE_COUNT = "getAllByTypeCount";
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
 	private static final String DELETE_BY_ID = "deleteById";
@@ -88,14 +91,15 @@ public class SlurmPrefixModel extends DatabaseModel {
 	}
 
 	/**
-	 * Get all the {@link SlurmPrefix}s, return empty list when no records are found
+	 * Get all the {@link SlurmPrefix}s found
 	 * 
 	 * @param pagingParams
 	 * @param connection
-	 * @return The list of {@link SlurmPrefix}s, or empty list when no data is found
+	 * @return The {@link ListResult} of {@link SlurmPrefix}s found
 	 * @throws SQLException
 	 */
-	public static List<SlurmPrefix> getAll(PagingParameters pagingParams, Connection connection) throws SQLException {
+	public static ListResult<SlurmPrefix> getAll(PagingParameters pagingParams, Connection connection)
+			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, SlurmPrefixDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
@@ -105,22 +109,21 @@ public class SlurmPrefixModel extends DatabaseModel {
 				SlurmPrefixDbObject slurmPrefix = new SlurmPrefixDbObject(rs);
 				slurmPrefixes.add(slurmPrefix);
 			}
-
-			return slurmPrefixes;
+			Integer totalFound = getAllCount(connection);
+			return new ListResult<SlurmPrefix>(slurmPrefixes, totalFound);
 		}
 	}
 
 	/**
-	 * Get all the {@link SlurmPrefix}s by its type, return empty list when no
-	 * records are found
+	 * Get all the {@link SlurmPrefix}s found by its type
 	 * 
 	 * @param type
 	 * @param pagingParams
 	 * @param connection
-	 * @return The list of {@link SlurmPrefix}s, or empty list when no data is found
+	 * @return The {@link ListResult} of {@link SlurmPrefix}s found
 	 * @throws SQLException
 	 */
-	public static List<SlurmPrefix> getAllByType(int type, PagingParameters pagingParams, Connection connection)
+	public static ListResult<SlurmPrefix> getAllByType(int type, PagingParameters pagingParams, Connection connection)
 			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE);
 		query = Util.getQueryWithPaging(query, pagingParams, SlurmPrefixDbObject.propertyToColumnMap);
@@ -132,8 +135,8 @@ public class SlurmPrefixModel extends DatabaseModel {
 				SlurmPrefixDbObject slurmPrefix = new SlurmPrefixDbObject(rs);
 				slurmPrefixes.add(slurmPrefix);
 			}
-
-			return slurmPrefixes;
+			Integer totalFound = getAllByTypeCount(type, connection);
+			return new ListResult<SlurmPrefix>(slurmPrefixes, totalFound);
 		}
 	}
 
@@ -223,6 +226,46 @@ public class SlurmPrefixModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
 			return executeUpdate(statement, getModelClass(), logger);
+		}
+	}
+
+	/**
+	 * Get the count of all the {@link SlurmPrefix}es, return 0 when no records are
+	 * found
+	 * 
+	 * @param connection
+	 * @return The count of all {@link SlurmPrefix}es, or 0 when no data is found
+	 * @throws SQLException
+	 */
+	private static Integer getAllCount(Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_ALL_COUNT);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+			return 0;
+		}
+	}
+
+	/**
+	 * Get the count of all the {@link SlurmPrefix}es by type, return 0 when no
+	 * records are found
+	 * 
+	 * @param connection
+	 * @return The count of all {@link SlurmPrefix}es by type, or 0 when no data is
+	 *         found
+	 * @throws SQLException
+	 */
+	private static Integer getAllByTypeCount(int type, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE_COUNT);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setInt(1, type);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+			return 0;
 		}
 	}
 

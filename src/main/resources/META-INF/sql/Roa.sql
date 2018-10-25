@@ -25,6 +25,10 @@ select rpo_id,
 [order]
 [limit];
 
+#getAllCount
+select count(*)
+  from roa;
+
 #findExactMatch
 select rpo_id,
        roa_id,

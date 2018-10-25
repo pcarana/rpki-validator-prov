@@ -15,6 +15,10 @@ select tal_id,
 [order]
 [limit];
 
+#getAllCount
+select count(*)
+  from tal;
+
 #exist
 select 1
   from tal

@@ -25,6 +25,10 @@ select slp_id,
 [order]
 [limit];
 
+#getAllCount
+select count(*)
+  from slurm_prefix;
+
 #getAllByType
 select slp_id,
        slp_asn,
@@ -39,6 +43,11 @@ select slp_id,
  where slp_type = ?
 [order]
 [limit];
+
+#getAllByTypeCount
+select count(*)
+  from slurm_prefix
+ where slp_type = ?;
 
 #exist
 select 1

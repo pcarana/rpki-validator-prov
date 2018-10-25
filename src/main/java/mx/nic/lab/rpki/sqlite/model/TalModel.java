@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import mx.nic.lab.rpki.db.pojo.ListResult;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Tal;
 import mx.nic.lab.rpki.db.pojo.TalUri;
@@ -37,6 +38,7 @@ public class TalModel extends DatabaseModel {
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_BY_RPKI_REPO_ID = "getByRpkiRepositoryId";
 	private static final String GET_ALL = "getAll";
+	private static final String GET_ALL_COUNT = "getAllCount";
 	private static final String GET_BY_UNIQUE = "getByUnique";
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
@@ -94,14 +96,14 @@ public class TalModel extends DatabaseModel {
 	}
 
 	/**
-	 * Get all the {@link Tal}s, return empty list when no files are found
+	 * Get all the {@link Tal}s found
 	 * 
 	 * @param pagingParams
 	 * @param connection
-	 * @return The list of {@link Tal}s, or empty list when no data is found
+	 * @return The {@link ListResult} of {@link Tal}s found
 	 * @throws SQLException
 	 */
-	public static List<Tal> getAll(PagingParameters pagingParams, Connection connection) throws SQLException {
+	public static ListResult<Tal> getAll(PagingParameters pagingParams, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, TalDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
@@ -112,7 +114,8 @@ public class TalModel extends DatabaseModel {
 				loadRelatedObjects(tal, true, connection);
 				tals.add(tal);
 			}
-			return tals;
+			Integer totalFound = getAllCount(connection);
+			return new ListResult<Tal>(tals, totalFound);
 		}
 	}
 
@@ -312,6 +315,24 @@ public class TalModel extends DatabaseModel {
 			TalDbObject found = new TalDbObject(resultSet);
 			loadRelatedObjects(found, false, connection);
 			return found;
+		}
+	}
+
+	/**
+	 * Get the count of all the {@link Tal}s, return 0 when no records are found
+	 * 
+	 * @param connection
+	 * @return The count of all {@link Tal}s, or 0 when no data is found
+	 * @throws SQLException
+	 */
+	public static Integer getAllCount(Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_ALL_COUNT);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+			return 0;
 		}
 	}
 

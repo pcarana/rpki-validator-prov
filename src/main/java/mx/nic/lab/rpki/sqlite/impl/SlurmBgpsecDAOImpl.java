@@ -2,12 +2,12 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.exception.ValidationError;
 import mx.nic.lab.rpki.db.exception.ValidationErrorType;
 import mx.nic.lab.rpki.db.exception.ValidationException;
+import mx.nic.lab.rpki.db.pojo.ListResult;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.SlurmBgpsec;
 import mx.nic.lab.rpki.db.spi.SlurmBgpsecDAO;
@@ -32,7 +32,7 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 	}
 
 	@Override
-	public List<SlurmBgpsec> getAll(PagingParameters pagingParams) throws ApiDataAccessException {
+	public ListResult<SlurmBgpsec> getAll(PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return SlurmBgpsecModel.getAll(pagingParams, connection);
 		} catch (SQLException e) {
@@ -41,7 +41,7 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 	}
 
 	@Override
-	public List<SlurmBgpsec> getAllByType(int type, PagingParameters pagingParams) throws ApiDataAccessException {
+	public ListResult<SlurmBgpsec> getAllByType(int type, PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return SlurmBgpsecModel.getAllByType(type, pagingParams, connection);
 		} catch (SQLException e) {

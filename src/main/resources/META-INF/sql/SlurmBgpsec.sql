@@ -19,6 +19,10 @@ select slb_id,
 [order]
 [limit];
 
+#getAllCount
+select count(*)
+  from slurm_bgpsec;
+
 #getAllByType
 select slb_id,
        slb_asn,
@@ -30,6 +34,11 @@ select slb_id,
  where slb_type = ?
 [order]
 [limit];
+
+#getAllByTypeCount
+select count(*)
+  from slurm_bgpsec
+ where slb_type = ?;
 
 #exist
 select 1

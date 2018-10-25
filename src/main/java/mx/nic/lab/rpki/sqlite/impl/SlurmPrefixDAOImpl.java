@@ -2,12 +2,12 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.exception.ValidationError;
 import mx.nic.lab.rpki.db.exception.ValidationErrorType;
 import mx.nic.lab.rpki.db.exception.ValidationException;
+import mx.nic.lab.rpki.db.pojo.ListResult;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.SlurmPrefix;
 import mx.nic.lab.rpki.db.spi.SlurmPrefixDAO;
@@ -32,7 +32,7 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 	}
 
 	@Override
-	public List<SlurmPrefix> getAll(PagingParameters pagingParams) throws ApiDataAccessException {
+	public ListResult<SlurmPrefix> getAll(PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return SlurmPrefixModel.getAll(pagingParams, connection);
 		} catch (SQLException e) {
@@ -41,7 +41,7 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 	}
 
 	@Override
-	public List<SlurmPrefix> getAllByType(int type, PagingParameters pagingParams) throws ApiDataAccessException {
+	public ListResult<SlurmPrefix> getAllByType(int type, PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return SlurmPrefixModel.getAllByType(type, pagingParams, connection);
 		} catch (SQLException e) {

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import mx.nic.lab.rpki.db.pojo.ListResult;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Roa;
 import mx.nic.lab.rpki.sqlite.database.QueryGroup;
@@ -34,6 +35,7 @@ public class RoaModel extends DatabaseModel {
 	private static final String GET_BY_ID = "getById";
 	private static final String GET_BY_RPKI_OBJECT_ID = "getByRpkiObjectId";
 	private static final String GET_ALL = "getAll";
+	private static final String GET_ALL_COUNT = "getAllCount";
 	private static final String FIND_EXACT_MATCH = "findExactMatch";
 	private static final String FIND_COVERING_AGGREGATE = "findCoveringAggregate";
 	private static final String FIND_MORE_SPECIFIC = "findMoreSpecific";
@@ -91,14 +93,14 @@ public class RoaModel extends DatabaseModel {
 	}
 
 	/**
-	 * Get all the {@link Roa}s, return empty list when no records are found
+	 * Get all the {@link Roa}s found
 	 * 
 	 * @param pagingParams
 	 * @param connection
-	 * @return The list of {@link Roa}s, or empty list when no data is found
+	 * @return The {@link ListResult} of {@link Roa}s found
 	 * @throws SQLException
 	 */
-	public static List<Roa> getAll(PagingParameters pagingParams, Connection connection) throws SQLException {
+	public static ListResult<Roa> getAll(PagingParameters pagingParams, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, RoaDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
@@ -109,7 +111,8 @@ public class RoaModel extends DatabaseModel {
 				loadRelatedObjects(roa, connection);
 				roas.add(roa);
 			}
-			return roas;
+			Integer totalFound = getAllCount(connection);
+			return new ListResult<Roa>(roas, totalFound);
 		}
 	}
 
@@ -276,6 +279,24 @@ public class RoaModel extends DatabaseModel {
 	private static void loadRelatedObjects(RoaDbObject roa, Connection connection) throws SQLException {
 		roa.setRpkiObject(RpkiObjectModel.getById(roa.getRpkiObjectId(), connection));
 		roa.setGbrs(GbrModel.getByRoa(roa, connection));
+	}
+
+	/**
+	 * Get the count of all the {@link Roa}s, return 0 when no records are found
+	 * 
+	 * @param connection
+	 * @return The count of all {@link Roa}s, or 0 when no data is found
+	 * @throws SQLException
+	 */
+	private static Integer getAllCount(Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_ALL_COUNT);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+			return 0;
+		}
 	}
 
 	public static QueryGroup getQueryGroup() {

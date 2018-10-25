@@ -2,9 +2,9 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
+import mx.nic.lab.rpki.db.pojo.ListResult;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Roa;
 import mx.nic.lab.rpki.db.spi.RoaDAO;
@@ -27,7 +27,7 @@ public class RoaDAOImpl implements RoaDAO {
 	}
 
 	@Override
-	public List<Roa> getAll(PagingParameters pagingParams) throws ApiDataAccessException {
+	public ListResult<Roa> getAll(PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return RoaModel.getAll(pagingParams, connection);
 		} catch (SQLException e) {
