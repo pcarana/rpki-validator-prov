@@ -41,7 +41,7 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 	}
 
 	@Override
-	public ListResult<SlurmPrefix> getAllByType(int type, PagingParameters pagingParams) throws ApiDataAccessException {
+	public ListResult<SlurmPrefix> getAllByType(String type, PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return SlurmPrefixModel.getAllByType(type, pagingParams, connection);
 		} catch (SQLException e) {

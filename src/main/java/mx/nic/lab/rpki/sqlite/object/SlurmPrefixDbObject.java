@@ -114,10 +114,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 		if (resultSet.wasNull()) {
 			setPrefixMaxLength(null);
 		}
-		setType(resultSet.getInt(TYPE_COLUMN));
-		if (resultSet.wasNull()) {
-			setType(null);
-		}
+		setType(resultSet.getString(TYPE_COLUMN));
 		setComment(resultSet.getString(COMMENT_COLUMN));
 	}
 
@@ -154,9 +151,9 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 			statement.setNull(6, Types.INTEGER);
 		}
 		if (getType() != null) {
-			statement.setInt(7, getType());
+			statement.setString(7, getType());
 		} else {
-			statement.setNull(7, Types.INTEGER);
+			statement.setNull(7, Types.VARCHAR);
 		}
 		if (getComment() != null) {
 			statement.setString(8, getComment());
@@ -171,7 +168,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 		if (operation == Operation.CREATE) {
 			// Check the attributes according to the type
 			// The ID isn't validated since this is a new object
-			Integer type = this.getType();
+			String type = this.getType();
 			Long asn = this.getAsn();
 			byte[] startPrefix = this.getStartPrefix();
 			byte[] endPrefix = this.getEndPrefix();
@@ -181,7 +178,9 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 			boolean keepValidating = true;
 			if (type == null) {
 				validationErrors.add(new ValidationError(OBJECT_NAME, TYPE, null, ValidationErrorType.NULL));
-			} else if (type == TYPE_FILTER) {
+				// The property must be present to keep validating
+				throw new ValidationException(validationErrors);
+			} else if (type.equals(TYPE_FILTER)) {
 				// Either an ASN or a Prefix must exist
 				if (asn == null && startPrefix == null) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, ASN, null, ValidationErrorType.NULL));
@@ -193,7 +192,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 					validationErrors.add(new ValidationError(OBJECT_NAME, PREFIX_MAX_LENGTH, prefixMaxLength,
 							ValidationErrorType.NOT_NULL));
 				}
-			} else if (type == TYPE_ASSERTION) {
+			} else if (type.equals(TYPE_ASSERTION)) {
 				// Both ASN and a Prefix must exist
 				if (asn == null) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, ASN, null, ValidationErrorType.NULL));
@@ -235,13 +234,13 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 				keepValidating = keepValidating
 						&& validatePrefixLength(startPrefix, prefixLength, PREFIX_LENGTH, validationErrors);
 				// If max length is indicated, it can't be grater than length
-				if (prefixMaxLength != null && type == TYPE_ASSERTION && prefixMaxLength < prefixLength) {
+				if (prefixMaxLength != null && type.equals(TYPE_ASSERTION) && prefixMaxLength < prefixLength) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, PREFIX_MAX_LENGTH, prefixMaxLength,
 							ValidationErrorType.VALUE_OUT_OF_RANGE, prefixLength, prefixLength));
 					keepValidating = false;
 				}
 			}
-			if (prefixMaxLength != null && type == TYPE_ASSERTION) {
+			if (prefixMaxLength != null && type.equals(TYPE_ASSERTION)) {
 				keepValidating = keepValidating
 						&& validatePrefixLength(startPrefix, prefixMaxLength, PREFIX_MAX_LENGTH, validationErrors);
 			}

@@ -90,10 +90,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 		}
 		setSki(resultSet.getString(SKI_COLUMN));
 		setRouterPublicKey(resultSet.getString(ROUTER_PUBLIC_KEY_COLUMN));
-		setType(resultSet.getInt(TYPE_COLUMN));
-		if (resultSet.wasNull()) {
-			setType(null);
-		}
+		setType(resultSet.getString(TYPE_COLUMN));
 		setComment(resultSet.getString(COMMENT_COLUMN));
 	}
 
@@ -115,9 +112,9 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 			statement.setNull(3, Types.VARCHAR);
 		}
 		if (getType() != null) {
-			statement.setInt(4, getType());
+			statement.setString(4, getType());
 		} else {
-			statement.setNull(4, Types.INTEGER);
+			statement.setNull(4, Types.VARCHAR);
 		}
 		if (getComment() != null) {
 			statement.setString(5, getComment());
@@ -132,7 +129,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 		if (operation == Operation.CREATE) {
 			// Check the attributes according to the type
 			// The ID isn't validated since this is a new object
-			Integer type = this.getType();
+			String type = this.getType();
 			Long asn = this.getAsn();
 			String ski = getTrimmedString(this.getSki());
 			String routerPublicKey = getTrimmedString(this.getRouterPublicKey());
@@ -140,7 +137,9 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 
 			if (type == null) {
 				validationErrors.add(new ValidationError(OBJECT_NAME, TYPE, null, ValidationErrorType.NULL));
-			} else if (type == TYPE_FILTER) {
+				// The property must be present to keep validating
+				throw new ValidationException(validationErrors);
+			} else if (type.equals(TYPE_FILTER)) {
 				// Either an ASN or a SKI must exist
 				if (asn == null && ski == null) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, ASN, null, ValidationErrorType.NULL));
@@ -151,7 +150,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 					validationErrors.add(new ValidationError(OBJECT_NAME, ROUTER_PUBLIC_KEY, routerPublicKey,
 							ValidationErrorType.NOT_NULL));
 				}
-			} else if (type == TYPE_ASSERTION) {
+			} else if (type.equals(TYPE_ASSERTION)) {
 				// ASN, SKI and Public key must exist
 				if (asn == null) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, ASN, null, ValidationErrorType.NULL));

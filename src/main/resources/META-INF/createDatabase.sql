@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS slurm_prefix (
   slp_end_prefix BLOB NULL,
   slp_prefix_length INTEGER NULL,
   slp_prefix_max_length INTEGER NULL,
-  slp_type INTEGER NOT NULL,
+  slp_type TEXT NOT NULL,
   slp_comment TEXT NULL,
   PRIMARY KEY (slp_id));
 
@@ -187,6 +187,6 @@ CREATE TABLE IF NOT EXISTS slurm_bgpsec (
   slb_asn INTEGER NULL,
   slb_ski TEXT NULL,
   slb_public_key TEXT NULL,
-  slb_type INTEGER NOT NULL,
+  slb_type TEXT NOT NULL,
   slb_comment TEXT NULL,
   PRIMARY KEY (slb_id));

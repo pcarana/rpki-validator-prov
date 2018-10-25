@@ -41,7 +41,7 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 	}
 
 	@Override
-	public ListResult<SlurmBgpsec> getAllByType(int type, PagingParameters pagingParams) throws ApiDataAccessException {
+	public ListResult<SlurmBgpsec> getAllByType(String type, PagingParameters pagingParams) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return SlurmBgpsecModel.getAllByType(type, pagingParams, connection);
 		} catch (SQLException e) {

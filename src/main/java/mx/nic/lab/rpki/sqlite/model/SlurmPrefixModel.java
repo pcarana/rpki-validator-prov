@@ -123,12 +123,12 @@ public class SlurmPrefixModel extends DatabaseModel {
 	 * @return The {@link ListResult} of {@link SlurmPrefix}s found
 	 * @throws SQLException
 	 */
-	public static ListResult<SlurmPrefix> getAllByType(int type, PagingParameters pagingParams, Connection connection)
+	public static ListResult<SlurmPrefix> getAllByType(String type, PagingParameters pagingParams, Connection connection)
 			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE);
 		query = Util.getQueryWithPaging(query, pagingParams, SlurmPrefixDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			statement.setInt(1, type);
+			statement.setString(1, type);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<SlurmPrefix> slurmPrefixes = new ArrayList<SlurmPrefix>();
 			while (rs.next()) {
@@ -175,7 +175,7 @@ public class SlurmPrefixModel extends DatabaseModel {
 		}
 		query = query.replace("[and]", parameters.toString());
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			statement.setInt(1, slurmPrefix.getType());
+			statement.setString(1, slurmPrefix.getType());
 			if (asnIdx > 0) {
 				statement.setLong(asnIdx, slurmPrefix.getAsn());
 			}
@@ -257,10 +257,10 @@ public class SlurmPrefixModel extends DatabaseModel {
 	 *         found
 	 * @throws SQLException
 	 */
-	private static Integer getAllByTypeCount(int type, Connection connection) throws SQLException {
+	private static Integer getAllByTypeCount(String type, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE_COUNT);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			statement.setInt(1, type);
+			statement.setString(1, type);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (rs.next()) {
 				return rs.getInt(1);
