@@ -212,9 +212,8 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 				}
 			}
 			// "It is RECOMMENDED that an explanatory comment is also included" (RFC 8416)
-			if (comment == null || comment.trim().isEmpty()) {
-				validationErrors.add(new ValidationError(OBJECT_NAME, COMMENT, null, ValidationErrorType.NULL));
-			} else if (!(comment.trim().length() >= COMMENT_MIN_LENGTH
+			// but leave it optional
+			if (comment != null && !(comment.trim().length() >= COMMENT_MIN_LENGTH
 					&& comment.trim().length() <= COMMENT_MAX_LENGTH)) {
 				validationErrors.add(new ValidationError(OBJECT_NAME, COMMENT, comment,
 						ValidationErrorType.LENGTH_OUT_OF_RANGE, COMMENT_MIN_LENGTH, COMMENT_MAX_LENGTH));

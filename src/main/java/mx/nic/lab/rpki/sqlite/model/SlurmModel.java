@@ -31,9 +31,20 @@ public class SlurmModel {
 			return null;
 		}
 		Slurm slurm = new Slurm();
-		slurm.setPrefixes(prefixes);
-		slurm.setBgpsecs(bgpsecs);
-
+		prefixes.forEach((prefix) -> {
+			if (prefix.getType().equals(SlurmPrefix.TYPE_ASSERTION)) {
+				slurm.getLocallyAddedAssertions().getPrefixes().add(prefix);
+			} else {
+				slurm.getValidationOutputFilters().getPrefixes().add(prefix);
+			}
+		});
+		bgpsecs.forEach((bgpsec) -> {
+			if (bgpsec.getType().equals(SlurmBgpsec.TYPE_ASSERTION)) {
+				slurm.getLocallyAddedAssertions().getBgpsecs().add(bgpsec);
+			} else {
+				slurm.getValidationOutputFilters().getBgpsecs().add(bgpsec);
+			}
+		});
 		return slurm;
 	}
 }
