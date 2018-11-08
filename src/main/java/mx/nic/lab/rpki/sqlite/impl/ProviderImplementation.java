@@ -3,6 +3,7 @@ package mx.nic.lab.rpki.sqlite.impl;
 import java.util.Properties;
 
 import mx.nic.lab.rpki.db.exception.InitializationException;
+import mx.nic.lab.rpki.db.spi.CertificateTreeDAO;
 import mx.nic.lab.rpki.db.spi.DataAccessImplementation;
 import mx.nic.lab.rpki.db.spi.RoaDAO;
 import mx.nic.lab.rpki.db.spi.RouteValidationDAO;
@@ -76,6 +77,11 @@ public class ProviderImplementation implements DataAccessImplementation {
 	@Override
 	public ValidationRunDAO getValidationRunDAO() {
 		return new ValidationRunDAOImpl();
+	}
+
+	@Override
+	public CertificateTreeDAO getCertificateTreeDAO() {
+		return new CertificateTreeDAOImpl();
 	}
 
 }

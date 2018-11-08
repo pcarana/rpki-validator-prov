@@ -366,6 +366,28 @@ public class RpkiObjectModel extends DatabaseModel {
 	}
 
 	/**
+	 * Get the locations of an {@link RpkiObject} based on its ID
+	 * 
+	 * @param rpkiObjectId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	public static SortedSet<String> getLocations(Long rpkiObjectId, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_LOCATIONS);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setLong(1, rpkiObjectId);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			SortedSet<String> result = new TreeSet<>();
+			while (rs.next()) {
+				result.add(rs.getString("rpo_locations"));
+			}
+
+			return result;
+		}
+	}
+
+	/**
 	 * Store the related objects to an {@link RpkiObject}
 	 * 
 	 * @param rpkiObject
@@ -429,28 +451,6 @@ public class RpkiObjectModel extends DatabaseModel {
 			while (rs.next()) {
 				result.add(rs.getLong("rpr_id"));
 			}
-			return result;
-		}
-	}
-
-	/**
-	 * Get the locations of an {@link RpkiObject} based on its ID
-	 * 
-	 * @param rpkiObjectId
-	 * @param connection
-	 * @return
-	 * @throws SQLException
-	 */
-	private static SortedSet<String> getLocations(Long rpkiObjectId, Connection connection) throws SQLException {
-		String query = getQueryGroup().getQuery(GET_LOCATIONS);
-		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
-			statement.setLong(1, rpkiObjectId);
-			ResultSet rs = executeQuery(statement, getModelClass(), logger);
-			SortedSet<String> result = new TreeSet<>();
-			while (rs.next()) {
-				result.add(rs.getString("rpo_locations"));
-			}
-
 			return result;
 		}
 	}

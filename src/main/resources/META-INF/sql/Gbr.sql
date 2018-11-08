@@ -9,3 +9,8 @@ select g.gbr_id, g.rpo_id, g.gbr_vcard
 #create
 insert into gbr (rpo_id, gbr_vcard)
 values (?, ?);
+
+#getByRpkiObjectId
+select gbr_id, rpo_id, gbr_vcard
+  from gbr
+ where rpo_id = ?;

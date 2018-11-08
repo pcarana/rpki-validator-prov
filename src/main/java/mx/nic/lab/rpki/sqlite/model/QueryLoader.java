@@ -21,6 +21,7 @@ public class QueryLoader {
 	}
 
 	private static void loadModelsQueries(String schema) {
+		CertificateTreeModel.loadQueryGroup(schema);
 		GbrModel.loadQueryGroup(schema);
 		RoaModel.loadQueryGroup(schema);
 		RpkiObjectModel.loadQueryGroup(schema);

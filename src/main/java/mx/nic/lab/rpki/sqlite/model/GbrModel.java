@@ -33,6 +33,7 @@ public class GbrModel extends DatabaseModel {
 
 	// Queries IDs used by this model
 	private static final String GET_BY_PARENT_CA = "getByParentCa";
+	private static final String GET_BY_RPKI_OBJECT_ID = "getByRpkiObjectId";
 	private static final String CREATE = "create";
 
 	/**
@@ -109,6 +110,27 @@ public class GbrModel extends DatabaseModel {
 			stored.storeToDatabase(statement);
 			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
+		}
+	}
+
+	/**
+	 * Get the {@link Gbr} related to a RPKI OBJECT ID, return null when no data is
+	 * found
+	 * 
+	 * @param rpkiObjectId
+	 * @param connection
+	 * @return The {@link Gbr} related, or null when no data is found
+	 * @throws SQLException
+	 */
+	public static Gbr getByRpkiObjectId(Long rpkiObjectId, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_BY_RPKI_OBJECT_ID);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setLong(1, rpkiObjectId);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			if (rs.next()) {
+				return new GbrDbObject(rs);
+			}
+			return null;
 		}
 	}
 
