@@ -21,15 +21,13 @@ public class SlurmModel {
 	 * {@link SlurmBgpsec} lists.
 	 * 
 	 * @param connection
-	 * @return The complete SLURM, or null if no data is found
+	 * @return The complete SLURM, if no rules are found then the object returned
+	 *         has empty lists
 	 * @throws SQLException
 	 */
 	public static Slurm getAll(Connection connection) throws SQLException {
 		List<SlurmPrefix> prefixes = SlurmPrefixModel.getAll(null, connection).getResults();
 		List<SlurmBgpsec> bgpsecs = SlurmBgpsecModel.getAll(null, connection).getResults();
-		if (prefixes.isEmpty() && bgpsecs.isEmpty()) {
-			return null;
-		}
 		Slurm slurm = new Slurm();
 		prefixes.forEach((prefix) -> {
 			if (prefix.getType().equals(SlurmPrefix.TYPE_ASSERTION)) {
