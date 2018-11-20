@@ -20,8 +20,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import org.sqlite.SQLiteDataSource;
-import org.sqlite.SQLiteOpenMode;
+import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 
 import mx.nic.lab.rpki.db.exception.InitializationException;
 
@@ -35,6 +34,11 @@ public class DatabaseSession {
 	 * Milliseconds that the implementation will wait to retry in case of a DB lock
 	 */
 	public static final long BUSY_RETRY_MS = 200L;
+
+	/**
+	 * Query execution timeout in seconds
+	 */
+	public static final int QUERY_TIMEOUT = 10;
 
 	/**
 	 * Data source to get/store data
@@ -141,16 +145,11 @@ public class DatabaseSession {
 			throw new InitializationException("I can't find a data source in the configuration.");
 		}
 
-		try {
-			Class.forName(driverClassName);
-		} catch (ClassNotFoundException e) {
-			throw new InitializationException("Driver not found: " + driverClassName);
-		}
-
-		SQLiteDataSource sqliteDataSource = new SQLiteDataSource();
+		BasicDataSource sqliteDataSource = new BasicDataSource();
+		sqliteDataSource.setDriverClassName(driverClassName);
 		sqliteDataSource.setUrl(url);
-		sqliteDataSource.setEnforceForeignKeys(true);
-		sqliteDataSource.getConfig().setOpenMode(SQLiteOpenMode.FULLMUTEX);
+		// Allow only one connection to avoid collisions when the DB is locked
+		sqliteDataSource.setMaxTotal(1);
 
 		// Load the test query, if not present then load the most common
 		// (http://stackoverflow.com/questions/3668506)
@@ -168,7 +167,7 @@ public class DatabaseSession {
 		return sqliteDataSource;
 	}
 
-	private static void testDatabase(SQLiteDataSource ds, String testQuery) throws SQLException {
+	private static void testDatabase(BasicDataSource ds, String testQuery) throws SQLException {
 		try (Connection connection = ds.getConnection(); Statement statement = connection.createStatement();) {
 			logger.log(Level.FINE, "Executing QUERY: " + testQuery);
 			ResultSet resultSet = statement.executeQuery(testQuery);

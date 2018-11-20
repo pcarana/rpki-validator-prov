@@ -44,6 +44,7 @@ public class DatabaseModel {
 			while (true) {
 				try {
 					result = connection.prepareStatement(sql);
+					result.setQueryTimeout(DatabaseSession.QUERY_TIMEOUT);
 					break;
 				} catch (SQLException e) {
 					if (e.getErrorCode() != SQLiteErrorCode.SQLITE_BUSY.code) {
@@ -73,7 +74,7 @@ public class DatabaseModel {
 			throws SQLException {
 		synchronized (clazz) {
 			ResultSet result = null;
-			logger.log(Level.FINE, "Executing QUERY: " + statement.toString());
+			logger.log(Level.FINE, "Executing QUERY: " + statement.toString() + " from " + clazz.getName());
 			while (true) {
 				try {
 					result = statement.executeQuery();
@@ -109,7 +110,7 @@ public class DatabaseModel {
 			throws SQLException {
 		synchronized (clazz) {
 			int result = -1;
-			logger.log(Level.FINE, "Executing QUERY: " + statement.toString());
+			logger.log(Level.FINE, "Executing QUERY: " + statement.toString() + " from " + clazz.getName());
 			while (true) {
 				try {
 					result = statement.executeUpdate();

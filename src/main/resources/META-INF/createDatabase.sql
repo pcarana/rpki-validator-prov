@@ -1,3 +1,5 @@
+PRAGMA foreign_keys = true;
+
 -- Table TAL
 CREATE TABLE IF NOT EXISTS tal (
   tal_id INTEGER,
