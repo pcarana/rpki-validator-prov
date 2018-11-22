@@ -57,3 +57,22 @@ values (?, ?, ?, ?, ?);
 
 #deleteById
 delete from slurm_bgpsec where slb_id = ?;
+
+#deleteAll
+delete from slurm_bgpsec;
+
+#getByProperties
+select slb_id,
+       slb_asn,
+       slb_ski,
+       slb_public_key,
+       slb_type,
+       slb_comment
+  from slurm_bgpsec
+ where slb_type = ?
+ [and];
+
+#updateComment
+update slurm_bgpsec
+   set slb_comment = ?
+ where slb_id = ?;

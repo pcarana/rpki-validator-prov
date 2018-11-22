@@ -2,6 +2,7 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Set;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.exception.ValidationError;
@@ -41,7 +42,8 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 	}
 
 	@Override
-	public ListResult<SlurmBgpsec> getAllByType(String type, PagingParameters pagingParams) throws ApiDataAccessException {
+	public ListResult<SlurmBgpsec> getAllByType(String type, PagingParameters pagingParams)
+			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return SlurmBgpsecModel.getAllByType(type, pagingParams, connection);
 		} catch (SQLException e) {
@@ -82,4 +84,36 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 		}
 	}
 
+	@Override
+	public SlurmBgpsec getBgpsecByProperties(Long asn, String ski, String routerPublicKey, String type)
+			throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return SlurmBgpsecModel.getByProperties(asn, ski, routerPublicKey, type, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public int updateComment(Long id, String newComment) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			// Validate that the object exists
+			if (SlurmBgpsecModel.getById(id, connection) == null) {
+				throw new ValidationException(
+						new ValidationError(SlurmBgpsec.OBJECT_NAME, ValidationErrorType.OBJECT_NOT_EXISTS));
+			}
+			return SlurmBgpsecModel.updateComment(id, newComment, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public void bulkDelete(Set<Long> ids) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			SlurmBgpsecModel.bulkDelete(ids, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
 }

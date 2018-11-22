@@ -2,6 +2,7 @@ package mx.nic.lab.rpki.sqlite.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Set;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.exception.ValidationError;
@@ -41,7 +42,8 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 	}
 
 	@Override
-	public ListResult<SlurmPrefix> getAllByType(String type, PagingParameters pagingParams) throws ApiDataAccessException {
+	public ListResult<SlurmPrefix> getAllByType(String type, PagingParameters pagingParams)
+			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return SlurmPrefixModel.getAllByType(type, pagingParams, connection);
 		} catch (SQLException e) {
@@ -118,5 +120,38 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 			}
 		}
 		return endPrefix;
+	}
+
+	@Override
+	public SlurmPrefix getPrefixByProperties(Long asn, byte[] prefix, Integer prefixLength, Integer maxPrefixLength,
+			String type) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return SlurmPrefixModel.getByProperties(asn, prefix, prefixLength, maxPrefixLength, type, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public int updateComment(Long id, String newComment) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			// Validate that the object exists
+			if (SlurmPrefixModel.getById(id, connection) == null) {
+				throw new ValidationException(
+						new ValidationError(SlurmPrefix.OBJECT_NAME, ValidationErrorType.OBJECT_NOT_EXISTS));
+			}
+			return SlurmPrefixModel.updateComment(id, newComment, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public void bulkDelete(Set<Long> ids) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			SlurmPrefixModel.bulkDelete(ids, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
 	}
 }

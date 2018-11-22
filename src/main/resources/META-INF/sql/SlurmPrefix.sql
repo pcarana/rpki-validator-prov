@@ -69,3 +69,25 @@ values (?, ?, ?, ?, ?, ?, ?, ?);
 
 #deleteById
 delete from slurm_prefix where slp_id = ?;
+
+#deleteAll
+delete from slurm_prefix;
+
+#getByProperties
+select slp_id,
+       slp_asn,
+       slp_prefix_text,
+       slp_start_prefix,
+       slp_end_prefix,
+       slp_prefix_length,
+       slp_prefix_max_length,
+       slp_type,
+       slp_comment
+  from slurm_prefix
+ where slp_type = ?
+ [and];
+
+#updateComment
+update slurm_prefix
+   set slp_comment = ?
+ where slp_id = ?;

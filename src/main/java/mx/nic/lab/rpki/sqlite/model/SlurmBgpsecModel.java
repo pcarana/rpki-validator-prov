@@ -5,8 +5,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.ListResult;
@@ -33,6 +35,7 @@ public class SlurmBgpsecModel extends DatabaseModel {
 
 	// Queries IDs used by this model
 	private static final String GET_BY_ID = "getById";
+	private static final String GET_BY_PROPERTIES = "getByProperties";
 	private static final String GET_ALL = "getAll";
 	private static final String GET_ALL_BY_TYPE = "getAllByType";
 	private static final String GET_ALL_COUNT = "getAllCount";
@@ -40,6 +43,8 @@ public class SlurmBgpsecModel extends DatabaseModel {
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
 	private static final String DELETE_BY_ID = "deleteById";
+	private static final String DELETE_ALL = "deleteAll";
+	private static final String UPDATE_COMMENT = "updateComment";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -123,8 +128,8 @@ public class SlurmBgpsecModel extends DatabaseModel {
 	 * @return The {@link ListResult} of {@link SlurmBgpsec}s found
 	 * @throws SQLException
 	 */
-	public static ListResult<SlurmBgpsec> getAllByType(String type, PagingParameters pagingParams, Connection connection)
-			throws SQLException {
+	public static ListResult<SlurmBgpsec> getAllByType(String type, PagingParameters pagingParams,
+			Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE);
 		query = Util.getQueryWithPaging(query, pagingParams, SlurmBgpsecDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
@@ -218,6 +223,140 @@ public class SlurmBgpsecModel extends DatabaseModel {
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setLong(1, id);
 			return executeUpdate(statement, getModelClass(), logger);
+		}
+	}
+
+	/**
+	 * Delete all the {@link SlurmBgpsec}, returns the number of deleted records
+	 * 
+	 * @param connection
+	 * @return <code>int</code> number of deleted records
+	 * @throws SQLException
+	 */
+	public static int deleteAll(Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(DELETE_ALL);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			return executeUpdate(statement, getModelClass(), logger);
+		}
+	}
+
+	/**
+	 * Get a SLURM BGPsec by its distinctive properties (comment not included),
+	 * return <code>null</code> if there's no match
+	 * 
+	 * @param asn
+	 *            ASN
+	 * @param ski
+	 *            SKI
+	 * @param routerPublicKey
+	 *            Router public key (may be null)
+	 * @param type
+	 *            SLURM BGPsec type (filter or assertion)
+	 * @param connection
+	 * @return the {@link SlurmBgpsec} found or <code>null</code> if there's no
+	 *         match
+	 * @throws SQLException
+	 */
+	public static SlurmBgpsec getByProperties(Long asn, String ski, String routerPublicKey, String type,
+			Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_BY_PROPERTIES);
+		StringBuilder parameters = new StringBuilder();
+		// The query already has a parameter "type"
+		int currentIdx = 2;
+		int asnIdx = -1;
+		int skiIdx = -1;
+		int routerPublicKeyIdx = -1;
+		parameters.append(" and ").append(SlurmBgpsecDbObject.ASN_COLUMN);
+		if (asn != null) {
+			parameters.append(" = ? ");
+			asnIdx = currentIdx++;
+		} else {
+			parameters.append(" is null ");
+		}
+		parameters.append(" and ").append(SlurmBgpsecDbObject.SKI_COLUMN);
+		if (ski != null) {
+			parameters.append(" = ? ");
+			skiIdx = currentIdx++;
+		} else {
+			parameters.append(" is null ");
+		}
+		parameters.append(" and ").append(SlurmBgpsecDbObject.ROUTER_PUBLIC_KEY_COLUMN);
+		if (routerPublicKey != null) {
+			parameters.append(" = ? ");
+			routerPublicKeyIdx = currentIdx++;
+		} else {
+			parameters.append(" is null ");
+		}
+		query = query.replace("[and]", parameters.toString());
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setString(1, type);
+			if (asnIdx > 0) {
+				statement.setLong(asnIdx, asn);
+			}
+			if (skiIdx > 0) {
+				statement.setString(skiIdx, ski);
+			}
+			if (routerPublicKeyIdx > 0) {
+				statement.setString(routerPublicKeyIdx, routerPublicKey);
+			}
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			if (!rs.next()) {
+				return null;
+			}
+			SlurmBgpsec slurmBgpsec = null;
+			do {
+				slurmBgpsec = new SlurmBgpsecDbObject(rs);
+			} while (rs.next());
+
+			return slurmBgpsec;
+		}
+	}
+
+	/**
+	 * Update the comment of a SLURM BGPsec
+	 * 
+	 * @param id
+	 *            ID of the SLURM BGPsec
+	 * @param newComment
+	 *            New comment of the SLURM BGPsec
+	 * @param connection
+	 * @return Number of rows affected
+	 * @throws SQLException
+	 */
+	public static int updateComment(Long id, String newComment, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(UPDATE_COMMENT);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			if (newComment != null) {
+				statement.setString(1, newComment);
+			} else {
+				statement.setNull(1, Types.VARCHAR);
+			}
+			statement.setLong(2, id);
+			return executeUpdate(statement, getModelClass(), logger);
+		}
+	}
+
+	/**
+	 * Delete all the SLURM BGPsecs sent at the {@link Set} of IDs
+	 * 
+	 * @param ids
+	 *            {@link Set} of IDs to delete
+	 * @param connection
+	 * @throws SQLException
+	 */
+	public static void bulkDelete(Set<Long> ids, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(DELETE_BY_ID);
+		boolean originalAutoCommit = connection.getAutoCommit();
+		connection.setAutoCommit(false);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			for (Long id : ids) {
+				statement.setLong(1, id);
+				executeUpdate(statement, getModelClass(), logger);
+			}
+		} finally {
+			// Commit what has been done
+			connection.commit();
+			connection.setAutoCommit(originalAutoCommit);
 		}
 	}
 

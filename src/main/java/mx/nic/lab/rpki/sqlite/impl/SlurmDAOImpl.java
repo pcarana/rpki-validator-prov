@@ -24,4 +24,31 @@ public class SlurmDAOImpl implements SlurmDAO {
 		}
 	}
 
+	@Override
+	public byte[] getLastChecksum() throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return SlurmModel.getLastChecksum(connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public int updateLastChecksum(byte[] newChecksum) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return SlurmModel.updateLastChecksum(newChecksum, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public int deleteSlurm() throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return SlurmModel.deleteAll(connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
 }

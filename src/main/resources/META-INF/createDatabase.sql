@@ -192,3 +192,12 @@ CREATE TABLE IF NOT EXISTS slurm_bgpsec (
   slb_type TEXT NOT NULL,
   slb_comment TEXT NULL,
   PRIMARY KEY (slb_id));
+
+
+-- Table SLURM_CHECKSUM
+CREATE TABLE IF NOT EXISTS slurm_checksum (
+  sch_checksum BLOB);
+
+
+-- Insert the last checksum (null value)
+INSERT INTO slurm_checksum VALUES (null);

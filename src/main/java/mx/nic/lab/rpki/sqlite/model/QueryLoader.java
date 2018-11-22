@@ -26,6 +26,7 @@ public class QueryLoader {
 		RoaModel.loadQueryGroup(schema);
 		RpkiObjectModel.loadQueryGroup(schema);
 		RpkiRepositoryModel.loadQueryGroup(schema);
+		SlurmModel.loadQueryGroup(schema);
 		SlurmBgpsecModel.loadQueryGroup(schema);
 		SlurmPrefixModel.loadQueryGroup(schema);
 		TalModel.loadQueryGroup(schema);
