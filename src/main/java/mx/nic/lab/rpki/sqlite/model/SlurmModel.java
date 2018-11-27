@@ -5,9 +5,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
+import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Slurm;
 import mx.nic.lab.rpki.db.pojo.SlurmBgpsec;
 import mx.nic.lab.rpki.db.pojo.SlurmPrefix;
@@ -69,8 +71,21 @@ public class SlurmModel extends DatabaseModel {
 	 * @throws SQLException
 	 */
 	public static Slurm getAll(Connection connection) throws SQLException {
-		List<SlurmPrefix> prefixes = SlurmPrefixModel.getAll(null, connection).getResults();
-		List<SlurmBgpsec> bgpsecs = SlurmBgpsecModel.getAll(null, connection).getResults();
+		// Same order as the file
+		LinkedHashMap<String, String> prefixSortMap = new LinkedHashMap<>();
+		prefixSortMap.put(SlurmPrefix.TYPE, PagingParameters.ORDER_ASC);
+		prefixSortMap.put(SlurmPrefix.ORDER, PagingParameters.ORDER_ASC);
+		PagingParameters prefixPagingParameters = new PagingParameters();
+		prefixPagingParameters.setSort(prefixSortMap);
+		List<SlurmPrefix> prefixes = SlurmPrefixModel.getAll(prefixPagingParameters, connection).getResults();
+
+		LinkedHashMap<String, String> bgpsecSortMap = new LinkedHashMap<>();
+		bgpsecSortMap.put(SlurmBgpsec.TYPE, PagingParameters.ORDER_ASC);
+		bgpsecSortMap.put(SlurmBgpsec.ORDER, PagingParameters.ORDER_ASC);
+		PagingParameters bgpsecPagingParameters = new PagingParameters();
+		bgpsecPagingParameters.setSort(bgpsecSortMap);
+		List<SlurmBgpsec> bgpsecs = SlurmBgpsecModel.getAll(bgpsecPagingParameters, connection).getResults();
+
 		Slurm slurm = new Slurm();
 		prefixes.forEach((prefix) -> {
 			if (prefix.getType().equals(SlurmPrefix.TYPE_ASSERTION)) {
