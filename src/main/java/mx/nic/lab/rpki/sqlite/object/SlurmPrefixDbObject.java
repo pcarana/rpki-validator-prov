@@ -34,6 +34,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 	public static final String PREFIX_MAX_LENGTH_COLUMN = "slp_prefix_max_length";
 	public static final String TYPE_COLUMN = "slp_type";
 	public static final String COMMENT_COLUMN = "slp_comment";
+	public static final String ORDER_COLUMN = "slp_order";
 
 	public static final int COMMENT_MIN_LENGTH = 1;
 	public static final int COMMENT_MAX_LENGTH = 2000;
@@ -53,6 +54,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 		propertyToColumnMap.put(PREFIX_MAX_LENGTH, PREFIX_MAX_LENGTH_COLUMN);
 		propertyToColumnMap.put(TYPE, TYPE_COLUMN);
 		propertyToColumnMap.put(COMMENT, COMMENT_COLUMN);
+		propertyToColumnMap.put(ORDER, ORDER_COLUMN);
 	}
 
 	public SlurmPrefixDbObject() {
@@ -74,6 +76,7 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 		this.setPrefixMaxLength(slurmPrefix.getPrefixMaxLength());
 		this.setType(slurmPrefix.getType());
 		this.setComment(slurmPrefix.getComment());
+		this.setOrder(slurmPrefix.getOrder());
 	}
 
 	/**
@@ -116,6 +119,10 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 		}
 		setType(resultSet.getString(TYPE_COLUMN));
 		setComment(resultSet.getString(COMMENT_COLUMN));
+		setOrder(resultSet.getInt(ORDER_COLUMN));
+		if (resultSet.wasNull()) {
+			setOrder(null);
+		}
 	}
 
 	@Override
@@ -159,6 +166,11 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 			statement.setString(8, getComment());
 		} else {
 			statement.setNull(8, Types.VARCHAR);
+		}
+		if (getOrder() != null) {
+			statement.setInt(9, getOrder());
+		} else {
+			statement.setNull(9, Types.INTEGER);
 		}
 	}
 

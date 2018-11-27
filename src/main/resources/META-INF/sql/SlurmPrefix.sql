@@ -7,7 +7,8 @@ select slp_id,
        slp_prefix_length,
        slp_prefix_max_length,
        slp_type,
-       slp_comment
+       slp_comment,
+       slp_order
   from slurm_prefix
  where slp_id = ?;
 
@@ -20,7 +21,8 @@ select slp_id,
        slp_prefix_length,
        slp_prefix_max_length,
        slp_type,
-       slp_comment
+       slp_comment,
+       slp_order
   from slurm_prefix
 [order]
 [limit];
@@ -38,7 +40,8 @@ select slp_id,
        slp_prefix_length,
        slp_prefix_max_length,
        slp_type,
-       slp_comment
+       slp_comment,
+       slp_order
   from slurm_prefix
  where slp_type = ?
 [order]
@@ -64,8 +67,9 @@ insert into slurm_prefix (
        slp_prefix_length,
        slp_prefix_max_length,
        slp_type,
-       slp_comment)
-values (?, ?, ?, ?, ?, ?, ?, ?);
+       slp_comment,
+       slp_order)
+values (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 #deleteById
 delete from slurm_prefix where slp_id = ?;
@@ -82,7 +86,8 @@ select slp_id,
        slp_prefix_length,
        slp_prefix_max_length,
        slp_type,
-       slp_comment
+       slp_comment,
+       slp_order
   from slurm_prefix
  where slp_type = ?
  [and];
@@ -90,4 +95,9 @@ select slp_id,
 #updateComment
 update slurm_prefix
    set slp_comment = ?
+ where slp_id = ?;
+
+#updateOrder
+update slurm_prefix
+   set slp_order = ?
  where slp_id = ?;

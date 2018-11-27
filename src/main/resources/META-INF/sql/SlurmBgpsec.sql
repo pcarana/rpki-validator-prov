@@ -4,7 +4,8 @@ select slb_id,
        slb_ski,
        slb_public_key,
        slb_type,
-       slb_comment
+       slb_comment,
+       slb_order
   from slurm_bgpsec
  where slb_id = ?;
 
@@ -14,7 +15,8 @@ select slb_id,
        slb_ski,
        slb_public_key,
        slb_type,
-       slb_comment
+       slb_comment,
+       slb_order
   from slurm_bgpsec
 [order]
 [limit];
@@ -29,7 +31,8 @@ select slb_id,
        slb_ski,
        slb_public_key,
        slb_type,
-       slb_comment
+       slb_comment,
+       slb_order
   from slurm_bgpsec
  where slb_type = ?
 [order]
@@ -52,8 +55,9 @@ insert into slurm_bgpsec (
        slb_ski,
        slb_public_key,
        slb_type,
-       slb_comment)
-values (?, ?, ?, ?, ?);
+       slb_comment,
+       slb_order)
+values (?, ?, ?, ?, ?, ?);
 
 #deleteById
 delete from slurm_bgpsec where slb_id = ?;
@@ -67,7 +71,8 @@ select slb_id,
        slb_ski,
        slb_public_key,
        slb_type,
-       slb_comment
+       slb_comment,
+       slb_order
   from slurm_bgpsec
  where slb_type = ?
  [and];
@@ -75,4 +80,9 @@ select slb_id,
 #updateComment
 update slurm_bgpsec
    set slb_comment = ?
+ where slb_id = ?;
+
+#updateOrder
+update slurm_bgpsec
+   set slb_order = ?
  where slb_id = ?;

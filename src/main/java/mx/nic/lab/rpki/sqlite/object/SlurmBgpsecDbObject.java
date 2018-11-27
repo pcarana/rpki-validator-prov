@@ -31,6 +31,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 	public static final String ROUTER_PUBLIC_KEY_COLUMN = "slb_public_key";
 	public static final String TYPE_COLUMN = "slb_type";
 	public static final String COMMENT_COLUMN = "slb_comment";
+	public static final String ORDER_COLUMN = "slb_order";
 
 	public static final int COMMENT_MIN_LENGTH = 1;
 	public static final int COMMENT_MAX_LENGTH = 2000;
@@ -47,6 +48,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 		propertyToColumnMap.put(ROUTER_PUBLIC_KEY, ROUTER_PUBLIC_KEY_COLUMN);
 		propertyToColumnMap.put(TYPE, TYPE_COLUMN);
 		propertyToColumnMap.put(COMMENT, COMMENT_COLUMN);
+		propertyToColumnMap.put(ORDER, ORDER_COLUMN);
 	}
 
 	public SlurmBgpsecDbObject() {
@@ -65,6 +67,7 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 		this.setRouterPublicKey(slurmBgpsec.getRouterPublicKey());
 		this.setType(slurmBgpsec.getType());
 		this.setComment(slurmBgpsec.getComment());
+		this.setOrder(slurmBgpsec.getOrder());
 	}
 
 	/**
@@ -92,6 +95,10 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 		setRouterPublicKey(resultSet.getString(ROUTER_PUBLIC_KEY_COLUMN));
 		setType(resultSet.getString(TYPE_COLUMN));
 		setComment(resultSet.getString(COMMENT_COLUMN));
+		setOrder(resultSet.getInt(ORDER_COLUMN));
+		if (resultSet.wasNull()) {
+			setOrder(null);
+		}
 	}
 
 	@Override
@@ -120,6 +127,11 @@ public class SlurmBgpsecDbObject extends SlurmBgpsec implements DatabaseObject {
 			statement.setString(5, getComment());
 		} else {
 			statement.setNull(5, Types.VARCHAR);
+		}
+		if (getOrder() != null) {
+			statement.setInt(6, getOrder());
+		} else {
+			statement.setNull(6, Types.INTEGER);
 		}
 	}
 

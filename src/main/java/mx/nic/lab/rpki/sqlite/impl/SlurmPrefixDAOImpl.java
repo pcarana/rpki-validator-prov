@@ -147,6 +147,20 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 	}
 
 	@Override
+	public int updateOrder(Long id, int newOrder) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			// Validate that the object exists
+			if (SlurmPrefixModel.getById(id, connection) == null) {
+				throw new ValidationException(
+						new ValidationError(SlurmPrefix.OBJECT_NAME, ValidationErrorType.OBJECT_NOT_EXISTS));
+			}
+			return SlurmPrefixModel.updateOrder(id, newOrder, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
 	public void bulkDelete(Set<Long> ids) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			SlurmPrefixModel.bulkDelete(ids, connection);

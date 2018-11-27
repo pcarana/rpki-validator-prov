@@ -45,6 +45,7 @@ public class SlurmPrefixModel extends DatabaseModel {
 	private static final String DELETE_BY_ID = "deleteById";
 	private static final String DELETE_ALL = "deleteAll";
 	private static final String UPDATE_COMMENT = "updateComment";
+	private static final String UPDATE_ORDER = "updateOrder";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -351,6 +352,31 @@ public class SlurmPrefixModel extends DatabaseModel {
 				statement.setString(1, newComment);
 			} else {
 				statement.setNull(1, Types.VARCHAR);
+			}
+			statement.setLong(2, id);
+			return executeUpdate(statement, getModelClass(), logger);
+		}
+	}
+
+	/**
+	 * Update the order of a prefix inside the JSON array at the SLURM file,
+	 * corresponding to the type (filter/assertion)
+	 * 
+	 * @param id
+	 *            ID of the prefix
+	 * @param newOrder
+	 *            New order of the prefix
+	 * @param connection
+	 * @return Number of rows affected
+	 * @throws SQLException
+	 */
+	public static int updateOrder(Long id, int newOrder, Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(UPDATE_ORDER);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			if (newOrder >= 0) {
+				statement.setInt(1, newOrder);
+			} else {
+				statement.setNull(1, Types.INTEGER);
 			}
 			statement.setLong(2, id);
 			return executeUpdate(statement, getModelClass(), logger);

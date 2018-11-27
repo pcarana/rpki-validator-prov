@@ -109,6 +109,20 @@ public class SlurmBgpsecDAOImpl implements SlurmBgpsecDAO {
 	}
 
 	@Override
+	public int updateOrder(Long id, int newOrder) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			// Validate that the object exists
+			if (SlurmBgpsecModel.getById(id, connection) == null) {
+				throw new ValidationException(
+						new ValidationError(SlurmBgpsec.OBJECT_NAME, ValidationErrorType.OBJECT_NOT_EXISTS));
+			}
+			return SlurmBgpsecModel.updateOrder(id, newOrder, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
 	public void bulkDelete(Set<Long> ids) throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			SlurmBgpsecModel.bulkDelete(ids, connection);
