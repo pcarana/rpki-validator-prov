@@ -10,6 +10,7 @@ import mx.nic.lab.rpki.db.exception.ValidationErrorType;
 import mx.nic.lab.rpki.db.exception.ValidationException;
 import mx.nic.lab.rpki.db.pojo.ListResult;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
+import mx.nic.lab.rpki.db.pojo.Roa;
 import mx.nic.lab.rpki.db.pojo.SlurmPrefix;
 import mx.nic.lab.rpki.db.spi.SlurmPrefixDAO;
 import mx.nic.lab.rpki.sqlite.database.DatabaseSession;
@@ -53,7 +54,8 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 
 	@Override
 	public boolean create(SlurmPrefix newSlurmPrefix) throws ApiDataAccessException {
-		newSlurmPrefix.setEndPrefix(calculateEndPrefix(newSlurmPrefix));
+		newSlurmPrefix.setEndPrefix(Roa.calculateEndPrefix(newSlurmPrefix.getStartPrefix(),
+				newSlurmPrefix.getPrefixLength(), newSlurmPrefix.getPrefixMaxLength()));
 		SlurmPrefixDbObject slurmPrefixDb = new SlurmPrefixDbObject(newSlurmPrefix);
 		slurmPrefixDb.validate(Operation.CREATE);
 
@@ -83,43 +85,6 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
-	}
-
-	/**
-	 * Calculates the End Prefix based on the prefix length and max prefix length
-	 * 
-	 * @param slurmPrefix
-	 * @return
-	 */
-	private byte[] calculateEndPrefix(SlurmPrefix slurmPrefix) {
-		byte[] startPrefix = slurmPrefix.getStartPrefix();
-		Integer prefixLength = slurmPrefix.getPrefixLength();
-		Integer maxPrefixLength = slurmPrefix.getPrefixMaxLength();
-		// If applies, only when there's a Prefix Max Length and is in a valid range
-		if (startPrefix == null || prefixLength == null || maxPrefixLength == null || maxPrefixLength <= prefixLength
-				|| maxPrefixLength > startPrefix.length * 8) {
-			return startPrefix;
-		}
-		byte[] endPrefix = startPrefix.clone();
-		int bytesBase = prefixLength / 8;
-		int bitsBase = prefixLength % 8;
-		int bytesMask = maxPrefixLength / 8;
-		int bitsMask = maxPrefixLength % 8;
-		if (maxPrefixLength > prefixLength && bytesBase < endPrefix.length) {
-			int currByte = bytesBase;
-			if (bytesMask > bytesBase) {
-				endPrefix[currByte] |= (255 >> bitsBase);
-				currByte++;
-				for (; currByte < bytesMask; currByte++) {
-					endPrefix[currByte] |= 255;
-				}
-				bitsBase = 0;
-			}
-			if (currByte < endPrefix.length) {
-				endPrefix[currByte] |= ((byte) (255 << (8 - bitsMask)) & (255 >> bitsBase));
-			}
-		}
-		return endPrefix;
 	}
 
 	@Override
