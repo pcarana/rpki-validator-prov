@@ -40,6 +40,10 @@ public class SlurmPrefixModel extends DatabaseModel {
 	private static final String GET_ALL_BY_TYPE = "getAllByType";
 	private static final String GET_ALL_COUNT = "getAllCount";
 	private static final String GET_ALL_BY_TYPE_COUNT = "getAllByTypeCount";
+	private static final String FIND_EXACT_MATCH = "findExactMatch";
+	private static final String FIND_COVERING_AGGREGATE = "findCoveringAggregate";
+	private static final String FIND_MORE_SPECIFIC = "findMoreSpecific";
+	private static final String FIND_FILTER_MATCH = "findFilterMatch";
 	private static final String EXIST = "exist";
 	private static final String CREATE = "create";
 	private static final String DELETE_BY_ID = "deleteById";
@@ -404,6 +408,133 @@ public class SlurmPrefixModel extends DatabaseModel {
 			// Commit what has been done
 			connection.commit();
 			connection.setAutoCommit(originalAutoCommit);
+		}
+	}
+
+	/**
+	 * Find a {@link SlurmPrefix} that covers the specified prefix, return null if
+	 * no record is found
+	 * 
+	 * @param prefix
+	 * @param prefixLength
+	 * @param connection
+	 * @return The {@link SlurmPrefix} that matches (or covers) the prefix
+	 * @throws SQLException
+	 */
+	public static SlurmPrefix findExactMatch(byte[] prefix, Integer prefixLength, Connection connection)
+			throws SQLException {
+		String query = getQueryGroup().getQuery(FIND_EXACT_MATCH);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setString(1, SlurmPrefix.TYPE_ASSERTION);
+			statement.setBytes(2, prefix);
+			statement.setInt(3, prefixLength);
+			statement.setInt(4, prefixLength);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			if (!rs.next()) {
+				return null;
+			}
+			SlurmPrefixDbObject slurmPrefix = null;
+			do {
+				slurmPrefix = new SlurmPrefixDbObject(rs);
+			} while (rs.next());
+
+			return slurmPrefix;
+		}
+	}
+
+	/**
+	 * Find all the candidate {@link SlurmPrefix}s that are covering aggregates of
+	 * the prefix received, this list still needs some work to effectively determine
+	 * if any of the {@link SlurmPrefix}s is a covering aggregate of the prefix (the
+	 * SQLite database doesn't support binary operators on BLOBs, so thats why only
+	 * the candidates are returned)
+	 * 
+	 * @param prefix
+	 * @param prefixLength
+	 * @param connection
+	 * @return List of candidate {@link SlurmPrefix}s that are covering aggregate of
+	 *         the received prefix
+	 * @throws SQLException
+	 */
+	public static List<SlurmPrefix> findCoveringAggregate(byte[] prefix, Integer prefixLength, Connection connection)
+			throws SQLException {
+		String query = getQueryGroup().getQuery(FIND_COVERING_AGGREGATE);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setString(1, SlurmPrefix.TYPE_ASSERTION);
+			statement.setBytes(2, prefix);
+			statement.setInt(3, prefixLength);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			List<SlurmPrefix> slurmPrefixes = new ArrayList<SlurmPrefix>();
+			while (rs.next()) {
+				SlurmPrefixDbObject slurmPrefix = new SlurmPrefixDbObject(rs);
+				slurmPrefixes.add(slurmPrefix);
+			}
+			return slurmPrefixes;
+		}
+	}
+
+	/**
+	 * Find all the candidate {@link SlurmPrefix}s that are more specific than the
+	 * prefix received, this list still needs some work to effectively determine if
+	 * any of the {@link SlurmPrefix}s is more specific than the prefix (the SQLite
+	 * database doesn't support binary operators on BLOBs, so thats why only the
+	 * candidates are returned)
+	 * 
+	 * @param prefix
+	 * @param prefixLength
+	 * @param connection
+	 * @return List of candidate {@link SlurmPrefix}s that are more specific than
+	 *         the received prefix
+	 * @throws SQLException
+	 */
+	public static List<SlurmPrefix> findMoreSpecific(byte[] prefix, Integer prefixLength, Connection connection)
+			throws SQLException {
+		String query = getQueryGroup().getQuery(FIND_MORE_SPECIFIC);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setString(1, SlurmPrefix.TYPE_ASSERTION);
+			statement.setBytes(2, prefix);
+			statement.setInt(3, prefixLength);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			List<SlurmPrefix> slurmPrefixes = new ArrayList<SlurmPrefix>();
+			while (rs.next()) {
+				SlurmPrefixDbObject slurmPrefix = new SlurmPrefixDbObject(rs);
+				slurmPrefixes.add(slurmPrefix);
+			}
+			return slurmPrefixes;
+		}
+	}
+
+	/**
+	 * Find if there's a filter that covers the prefix data sent
+	 * 
+	 * @param asn
+	 * @param prefix
+	 * @param prefixLength
+	 * @param connection
+	 * @return The {@link SlurmPrefix} filter that covers the prefix
+	 * @throws SQLException
+	 */
+	public static SlurmPrefix findFilterMatch(Long asn, byte[] prefix, Integer prefixLength, Connection connection)
+			throws SQLException {
+		String query = getQueryGroup().getQuery(FIND_FILTER_MATCH);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setString(1, SlurmPrefix.TYPE_FILTER);
+			statement.setLong(2, asn);
+			statement.setBytes(3, prefix);
+			statement.setInt(4, prefixLength);
+			statement.setLong(5, asn);
+			statement.setBytes(6, prefix);
+			statement.setInt(7, prefixLength);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			if (!rs.next()) {
+				return null;
+			}
+			SlurmPrefixDbObject slurmPrefix = null;
+			do {
+				slurmPrefix = new SlurmPrefixDbObject(rs);
+			} while (rs.next());
+
+			return slurmPrefix;
 		}
 	}
 
