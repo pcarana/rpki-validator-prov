@@ -1,5 +1,6 @@
 package mx.nic.lab.rpki.sqlite.impl;
 
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
@@ -54,8 +55,12 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 
 	@Override
 	public boolean create(SlurmPrefix newSlurmPrefix) throws ApiDataAccessException {
-		newSlurmPrefix.setEndPrefix(Roa.calculateEndPrefix(newSlurmPrefix.getStartPrefix(),
-				newSlurmPrefix.getPrefixLength(), newSlurmPrefix.getPrefixMaxLength()));
+		byte[] endPrefix = Roa.calculateEndPrefix(newSlurmPrefix.getStartPrefix(), newSlurmPrefix.getPrefixLength(),
+				newSlurmPrefix.getPrefixMaxLength());
+		if (newSlurmPrefix.getType() != null && newSlurmPrefix.getType().equals(SlurmPrefix.TYPE_FILTER)) {
+			endPrefix = calculateFilterEndPrefix(endPrefix, newSlurmPrefix);
+		}
+		newSlurmPrefix.setEndPrefix(endPrefix);
 		SlurmPrefixDbObject slurmPrefixDb = new SlurmPrefixDbObject(newSlurmPrefix);
 		slurmPrefixDb.validate(Operation.CREATE);
 
@@ -132,5 +137,32 @@ public class SlurmPrefixDAOImpl implements SlurmPrefixDAO {
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
+	}
+
+	/**
+	 * Calculate the end of a prefix filter, in this case the end prefix will be the
+	 * last valid IP of the IP block
+	 * 
+	 * @param currentEndPrefix
+	 * @param slurmPrefix
+	 * @return
+	 */
+	private byte[] calculateFilterEndPrefix(byte[] currentEndPrefix, SlurmPrefix slurmPrefix) {
+		if (currentEndPrefix == null || slurmPrefix.getStartPrefix() == null || slurmPrefix.getPrefixLength() == null) {
+			return currentEndPrefix;
+		}
+		int bytesBase = slurmPrefix.getPrefixLength() / 8;
+		int bitsBase = slurmPrefix.getPrefixLength() % 8;
+		byte[] prefixLengthMask = new byte[currentEndPrefix.length];
+		int currByte = bytesBase;
+		if (bitsBase > 0) {
+			prefixLengthMask[currByte++] |= ((byte) (255 >> bitsBase));
+		}
+		for (; currByte < prefixLengthMask.length; currByte++) {
+			prefixLengthMask[currByte] |= 255;
+		}
+		BigInteger endIp = new BigInteger(currentEndPrefix);
+		BigInteger mask = new BigInteger(prefixLengthMask);
+		return endIp.or(mask).toByteArray();
 	}
 }
