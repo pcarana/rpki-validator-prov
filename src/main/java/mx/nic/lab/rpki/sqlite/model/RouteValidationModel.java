@@ -27,24 +27,25 @@ public class RouteValidationModel {
 	 * @param asn
 	 * @param prefix
 	 * @param prefixLength
+	 * @param fullCheck
 	 * @param connection
 	 * @return The {@link RouteValidation} with the result of the validation
 	 * @throws SQLException
 	 */
-	public static RouteValidation validate(Long asn, byte[] prefix, Integer prefixLength, Connection connection)
-			throws SQLException {
+	public static RouteValidation validate(Long asn, byte[] prefix, Integer prefixLength, boolean fullCheck,
+			Connection connection) throws SQLException {
 		// If there's an assertion then stop the search and return the assertion result
-		RouteValidation slurmValidation = findSlurmAssertion(asn, prefix, prefixLength, connection);
+		RouteValidation slurmValidation = findSlurmAssertion(asn, prefix, prefixLength, fullCheck, connection);
 		if (slurmValidation != null) {
 			return slurmValidation;
 		}
 		// No assertion, check if there's a filter
-		slurmValidation = findSlurmFilter(asn, prefix, prefixLength, connection);
+		slurmValidation = findSlurmFilter(asn, prefix, prefixLength, fullCheck, connection);
 		if (slurmValidation != null) {
 			return slurmValidation;
 		}
 		// Well, then go for the ROA match(es)
-		return findRoaValidation(asn, prefix, prefixLength, connection);
+		return findRoaValidation(asn, prefix, prefixLength, fullCheck, connection);
 
 	}
 
@@ -55,18 +56,21 @@ public class RouteValidationModel {
 	 * @param asn
 	 * @param prefix
 	 * @param prefixLength
+	 * @param fullCheck
 	 * @param connection
 	 * @return
 	 * @throws SQLException
 	 */
-	private static RouteValidation findSlurmAssertion(Long asn, byte[] prefix, Integer prefixLength,
+	private static RouteValidation findSlurmAssertion(Long asn, byte[] prefix, Integer prefixLength, boolean fullCheck,
 			Connection connection) throws SQLException {
 		// Go for the exact SLURM prefix assertion match
 		SlurmPrefix matchedSlurmPrefix = SlurmPrefixModel.findExactMatch(prefix, prefixLength, connection);
 		if (matchedSlurmPrefix != null) {
 			boolean asnMatch = asn.equals(matchedSlurmPrefix.getAsn());
 			ValidityState validityState = asnMatch ? ValidityState.VALID : ValidityState.INVALID;
-			return createSlurmRouteValidation(validityState, PrefixState.MATCH_ROA, asnMatch, matchedSlurmPrefix);
+			AsState asState = asnMatch ? AsState.MATCHING : AsState.NON_MATCHING;
+			return createSlurmRouteValidation(validityState, PrefixState.MATCH_ROA, asState, matchedSlurmPrefix,
+					fullCheck);
 		}
 		// Check if there's a SLURM prefix assertion covering the received prefix (a.k.a
 		// the
@@ -77,8 +81,9 @@ public class RouteValidationModel {
 			if (!isPrefixInRange(prefix, slurmPrefix.getStartPrefix(), slurmPrefix.getPrefixLength())) {
 				continue;
 			}
-			return createSlurmRouteValidation(ValidityState.INVALID, PrefixState.MORE_SPECIFIC,
-					asn.equals(slurmPrefix.getAsn()), slurmPrefix);
+			AsState asState = asn.equals(slurmPrefix.getAsn()) ? AsState.MATCHING : AsState.NON_MATCHING;
+			return createSlurmRouteValidation(ValidityState.INVALID, PrefixState.MORE_SPECIFIC, asState, slurmPrefix,
+					fullCheck);
 		}
 		// Check if there's a SLURM prefix more specific (a.k.a the received prefix is a
 		// covering aggregate of the SLURM prefix)
@@ -88,8 +93,9 @@ public class RouteValidationModel {
 			if (!isPrefixInRange(slurmPrefix.getStartPrefix(), prefix, prefixLength)) {
 				continue;
 			}
-			return createSlurmRouteValidation(ValidityState.UNKNOWN, PrefixState.COVERING_AGGREGATE,
-					asn.equals(slurmPrefix.getAsn()), slurmPrefix);
+			AsState asState = asn.equals(slurmPrefix.getAsn()) ? AsState.MATCHING : AsState.NON_MATCHING;
+			return createSlurmRouteValidation(ValidityState.UNKNOWN, PrefixState.COVERING_AGGREGATE, asState,
+					slurmPrefix, fullCheck);
 		}
 		// There's no "UNKNOWN" case for SLURM assertions, return null to search for
 		// real ROAs
@@ -102,17 +108,18 @@ public class RouteValidationModel {
 	 * @param asn
 	 * @param prefix
 	 * @param prefixLength
+	 * @param fullCheck
 	 * @param connection
 	 * @return
 	 * @throws SQLException
 	 */
-	private static RouteValidation findSlurmFilter(Long asn, byte[] prefix, Integer prefixLength, Connection connection)
-			throws SQLException {
+	private static RouteValidation findSlurmFilter(Long asn, byte[] prefix, Integer prefixLength, boolean fullCheck,
+			Connection connection) throws SQLException {
 		// Search if there's any filter that matches the request
 		SlurmPrefix matchedFilter = SlurmPrefixModel.findFilterMatch(asn, prefix, prefixLength, connection);
 		if (matchedFilter != null) {
-			return createSlurmRouteValidation(ValidityState.UNKNOWN, PrefixState.NON_INTERSECTING, false,
-					matchedFilter);
+			return createSlurmRouteValidation(ValidityState.UNKNOWN, PrefixState.NON_INTERSECTING, AsState.NON_MATCHING,
+					matchedFilter, fullCheck);
 		}
 		return null;
 	}
@@ -127,14 +134,18 @@ public class RouteValidationModel {
 	 * @return
 	 * @throws SQLException
 	 */
-	private static RouteValidation findRoaValidation(Long asn, byte[] prefix, Integer prefixLength,
+	private static RouteValidation findRoaValidation(Long asn, byte[] prefix, Integer prefixLength, boolean fullCheck,
 			Connection connection) throws SQLException {
 		// Go for the exact ROA match
 		Roa matchedRoa = RoaModel.findExactMatch(prefix, prefixLength, connection);
 		if (matchedRoa != null) {
 			boolean asnMatch = asn.equals(matchedRoa.getAsn());
 			ValidityState validityState = asnMatch ? ValidityState.VALID : ValidityState.INVALID;
-			return createRoaRouteValidation(validityState, PrefixState.MATCH_ROA, asnMatch, matchedRoa);
+			AsState asState = asnMatch ? AsState.MATCHING : AsState.NON_MATCHING;
+			return createRoaRouteValidation(validityState, PrefixState.MATCH_ROA, asState, matchedRoa, true);
+		}
+		if (!fullCheck) {
+			return createRoaRouteValidation(null, null, null, null, fullCheck);
 		}
 		// Check if there's a ROA covering the received prefix (a.k.a the received
 		// prefix is more specific than ROA)
@@ -144,8 +155,8 @@ public class RouteValidationModel {
 			if (!isPrefixInRange(prefix, roa.getStartPrefix(), roa.getPrefixLength())) {
 				continue;
 			}
-			return createRoaRouteValidation(ValidityState.INVALID, PrefixState.MORE_SPECIFIC, asn.equals(roa.getAsn()),
-					roa);
+			AsState asState = asn.equals(roa.getAsn()) ? AsState.MATCHING : AsState.NON_MATCHING;
+			return createRoaRouteValidation(ValidityState.INVALID, PrefixState.MORE_SPECIFIC, asState, roa, fullCheck);
 		}
 		// Check if there's a ROA more specific (a.k.a the received prefix is a
 		// covering aggregate of the ROA)
@@ -155,12 +166,14 @@ public class RouteValidationModel {
 			if (!isPrefixInRange(roa.getStartPrefix(), prefix, prefixLength)) {
 				continue;
 			}
-			return createRoaRouteValidation(ValidityState.UNKNOWN, PrefixState.COVERING_AGGREGATE,
-					asn.equals(roa.getAsn()), roa);
+			AsState asState = asn.equals(roa.getAsn()) ? AsState.MATCHING : AsState.NON_MATCHING;
+			return createRoaRouteValidation(ValidityState.UNKNOWN, PrefixState.COVERING_AGGREGATE, asState, roa,
+					fullCheck);
 		}
 		// No match at all, check if at least oen ROA exists with the ASN
-		return createRoaRouteValidation(ValidityState.UNKNOWN, PrefixState.NON_INTERSECTING,
-				RoaModel.existAsn(asn, connection), null);
+		boolean asnMatch = RoaModel.existAsn(asn, connection);
+		AsState asState = asnMatch ? AsState.MATCHING : AsState.NON_MATCHING;
+		return createRoaRouteValidation(ValidityState.UNKNOWN, PrefixState.NON_INTERSECTING, asState, null, fullCheck);
 	}
 
 	/**
@@ -196,43 +209,47 @@ public class RouteValidationModel {
 
 	/**
 	 * Create a new instance of {@link RouteValidation} with the specified values,
-	 * considering that the object matches is a {@link SlurmPrefix}; use the
+	 * considering that the object matched is a {@link Roa}; use the
 	 * <code>asnMatch<code> to determine the {@link AsState}.
 	 * 
 	 * @param validityState
 	 * @param prefixState
-	 * @param asnMatch
+	 * @param asState
 	 * @param matchRoa
+	 * @param fullCheck
 	 * @return
 	 */
 	private static RouteValidation createRoaRouteValidation(ValidityState validityState, PrefixState prefixState,
-			boolean asnMatch, Roa matchRoa) {
+			AsState asState, Roa matchRoa, boolean fullCheck) {
 		RouteValidation result = new RouteValidation();
 		result.setValidityState(validityState);
 		result.setPrefixState(prefixState);
-		result.setAsState(asnMatch ? AsState.MATCHING : AsState.NON_MATCHING);
+		result.setAsState(asState);
 		result.setRoaMatch(matchRoa);
+		result.setFullCheck(fullCheck);
 		return result;
 	}
 
 	/**
 	 * Create a new instance of {@link RouteValidation} with the specified values,
-	 * considering that the object matches is a {@link SlurmPrefix}; use the
+	 * considering that the object matched is a {@link SlurmPrefix}; use the
 	 * <code>asnMatch<code> to determine the {@link AsState}.
 	 * 
 	 * @param validityState
 	 * @param prefixState
-	 * @param asnMatch
+	 * @param asState
 	 * @param matchSlurmPrefix
+	 * @param fullCheck
 	 * @return
 	 */
 	private static RouteValidation createSlurmRouteValidation(ValidityState validityState, PrefixState prefixState,
-			boolean asnMatch, SlurmPrefix matchSlurmPrefix) {
+			AsState asState, SlurmPrefix matchSlurmPrefix, boolean fullCheck) {
 		RouteValidation result = new RouteValidation();
 		result.setValidityState(validityState);
 		result.setPrefixState(prefixState);
-		result.setAsState(asnMatch ? AsState.MATCHING : AsState.NON_MATCHING);
+		result.setAsState(asState);
 		result.setSlurmMatch(matchSlurmPrefix);
+		result.setFullCheck(fullCheck);
 		return result;
 	}
 }

@@ -16,9 +16,10 @@ import mx.nic.lab.rpki.sqlite.model.RouteValidationModel;
 public class RouteValidationDAOImpl implements RouteValidationDAO {
 
 	@Override
-	public RouteValidation validate(Long asn, byte[] prefix, Integer prefixLength) throws ApiDataAccessException {
+	public RouteValidation validate(Long asn, byte[] prefix, Integer prefixLength, boolean fullCheck)
+			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return RouteValidationModel.validate(asn, prefix, prefixLength, connection);
+			return RouteValidationModel.validate(asn, prefix, prefixLength, fullCheck, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
