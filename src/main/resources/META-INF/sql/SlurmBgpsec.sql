@@ -18,12 +18,16 @@ select slb_id,
        slb_comment,
        slb_order
   from slurm_bgpsec
+ where 1 = 1
+[filter]
 [order]
 [limit];
 
 #getAllCount
 select count(*)
-  from slurm_bgpsec;
+  from slurm_bgpsec
+ where 1 = 1
+[filter];
 
 #getAllByType
 select slb_id,
@@ -35,13 +39,15 @@ select slb_id,
        slb_order
   from slurm_bgpsec
  where slb_type = ?
+[filter]
 [order]
 [limit];
 
 #getAllByTypeCount
 select count(*)
   from slurm_bgpsec
- where slb_type = ?;
+ where slb_type = ?
+[filter];
 
 #exist
 select 1

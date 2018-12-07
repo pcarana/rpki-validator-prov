@@ -22,12 +22,16 @@ select rpo_id,
        roa_prefix_max_length,
        roa_prefix_family
   from roa
+ where 1 = 1
+[filter]
 [order]
 [limit];
 
 #getAllCount
 select count(*)
-  from roa;
+  from roa
+ where 1 = 1
+[filter];
 
 #findExactMatch
 select rpo_id,

@@ -12,12 +12,16 @@ select tal_id,
        tal_name,
        tal_loaded_cer
   from tal
+ where 1 = 1
+[filter]
 [order]
 [limit];
 
 #getAllCount
 select count(*)
-  from tal;
+  from tal
+ where 1 = 1
+[filter];
 
 #exist
 select 1

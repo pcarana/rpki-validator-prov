@@ -104,6 +104,8 @@ public class RoaModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, RoaDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			// Set the filter to the query (if the param was added)
+			Util.setFilterParam(pagingParams, statement, 1);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Roa> roas = new ArrayList<Roa>();
 			while (rs.next()) {
@@ -111,7 +113,7 @@ public class RoaModel extends DatabaseModel {
 				loadRelatedObjects(roa, connection);
 				roas.add(roa);
 			}
-			Integer totalFound = getAllCount(connection);
+			Integer totalFound = getAllCount(pagingParams, connection);
 			return new ListResult<Roa>(roas, totalFound);
 		}
 	}
@@ -284,13 +286,16 @@ public class RoaModel extends DatabaseModel {
 	/**
 	 * Get the count of all the {@link Roa}s, return 0 when no records are found
 	 * 
+	 * @param pagingParams
 	 * @param connection
 	 * @return The count of all {@link Roa}s, or 0 when no data is found
 	 * @throws SQLException
 	 */
-	private static Integer getAllCount(Connection connection) throws SQLException {
+	private static Integer getAllCount(PagingParameters pagingParams, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_COUNT);
+		query = Util.getQueryWithPaging(query, pagingParams, RoaDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			Util.setFilterParam(pagingParams, statement, 1);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (rs.next()) {
 				return rs.getInt(1);

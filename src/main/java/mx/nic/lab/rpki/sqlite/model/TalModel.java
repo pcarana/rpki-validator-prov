@@ -107,6 +107,8 @@ public class TalModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, TalDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			// Set the filter to the query (if the param was added)
+			Util.setFilterParam(pagingParams, statement, 1);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Tal> tals = new ArrayList<Tal>();
 			while (rs.next()) {
@@ -114,7 +116,7 @@ public class TalModel extends DatabaseModel {
 				loadRelatedObjects(tal, true, connection);
 				tals.add(tal);
 			}
-			Integer totalFound = getAllCount(connection);
+			Integer totalFound = getAllCount(pagingParams, connection);
 			return new ListResult<Tal>(tals, totalFound);
 		}
 	}
@@ -325,9 +327,11 @@ public class TalModel extends DatabaseModel {
 	 * @return The count of all {@link Tal}s, or 0 when no data is found
 	 * @throws SQLException
 	 */
-	public static Integer getAllCount(Connection connection) throws SQLException {
+	private static Integer getAllCount(PagingParameters pagingParams, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_COUNT);
+		query = Util.getQueryWithPaging(query, pagingParams, TalDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			Util.setFilterParam(pagingParams, statement, 1);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (rs.next()) {
 				return rs.getInt(1);

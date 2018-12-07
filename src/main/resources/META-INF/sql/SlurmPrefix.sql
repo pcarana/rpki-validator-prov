@@ -24,12 +24,16 @@ select slp_id,
        slp_comment,
        slp_order
   from slurm_prefix
+ where 1 = 1
+[filter]
 [order]
 [limit];
 
 #getAllCount
 select count(*)
-  from slurm_prefix;
+  from slurm_prefix
+ where 1 = 1
+[filter];
 
 #getAllByType
 select slp_id,
@@ -44,13 +48,15 @@ select slp_id,
        slp_order
   from slurm_prefix
  where slp_type = ?
+[filter]
 [order]
 [limit];
 
 #getAllByTypeCount
 select count(*)
   from slurm_prefix
- where slp_type = ?;
+ where slp_type = ?
+[filter];
 
 #exist
 select 1

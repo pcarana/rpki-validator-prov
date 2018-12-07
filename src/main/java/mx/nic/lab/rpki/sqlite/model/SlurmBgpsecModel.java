@@ -109,13 +109,15 @@ public class SlurmBgpsecModel extends DatabaseModel {
 		String query = getQueryGroup().getQuery(GET_ALL);
 		query = Util.getQueryWithPaging(query, pagingParams, SlurmBgpsecDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			// Set the filter to the query (if the param was added)
+			Util.setFilterParam(pagingParams, statement, 1);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<SlurmBgpsec> slurmBgpsecs = new ArrayList<SlurmBgpsec>();
 			while (rs.next()) {
 				SlurmBgpsecDbObject slurmBgpsec = new SlurmBgpsecDbObject(rs);
 				slurmBgpsecs.add(slurmBgpsec);
 			}
-			Integer totalFound = getAllCount(connection);
+			Integer totalFound = getAllCount(pagingParams, connection);
 			return new ListResult<SlurmBgpsec>(slurmBgpsecs, totalFound);
 		}
 	}
@@ -135,13 +137,15 @@ public class SlurmBgpsecModel extends DatabaseModel {
 		query = Util.getQueryWithPaging(query, pagingParams, SlurmBgpsecDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setString(1, type);
+			// Set the filter to the query (if the param was added)
+			Util.setFilterParam(pagingParams, statement, 2);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<SlurmBgpsec> slurmBgpsecs = new ArrayList<SlurmBgpsec>();
 			while (rs.next()) {
 				SlurmBgpsecDbObject slurmBgpsec = new SlurmBgpsecDbObject(rs);
 				slurmBgpsecs.add(slurmBgpsec);
 			}
-			Integer totalFound = getAllByTypeCount(type, connection);
+			Integer totalFound = getAllByTypeCount(type, pagingParams, connection);
 			return new ListResult<SlurmBgpsec>(slurmBgpsecs, totalFound);
 		}
 	}
@@ -390,13 +394,17 @@ public class SlurmBgpsecModel extends DatabaseModel {
 	 * Get the count of all the {@link SlurmBgpsec}s, return 0 when no records are
 	 * found
 	 * 
+	 * @param pagingParams
 	 * @param connection
 	 * @return The count of all {@link SlurmBgpsec}s, or 0 when no data is found
 	 * @throws SQLException
 	 */
-	private static Integer getAllCount(Connection connection) throws SQLException {
+	private static Integer getAllCount(PagingParameters pagingParams, Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_COUNT);
+		query = Util.getQueryWithPaging(query, pagingParams, SlurmBgpsecDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			// Set the filter to the query (if the param was added)
+			Util.setFilterParam(pagingParams, statement, 1);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (rs.next()) {
 				return rs.getInt(1);
@@ -409,15 +417,21 @@ public class SlurmBgpsecModel extends DatabaseModel {
 	 * Get the count of all the {@link SlurmBgpsec}s by type, return 0 when no
 	 * records are found
 	 * 
+	 * @param type
+	 * @param pagingParams
 	 * @param connection
 	 * @return The count of all {@link SlurmBgpsec}s by type, or 0 when no data is
 	 *         found
 	 * @throws SQLException
 	 */
-	private static Integer getAllByTypeCount(String type, Connection connection) throws SQLException {
+	private static Integer getAllByTypeCount(String type, PagingParameters pagingParams, Connection connection)
+			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_ALL_BY_TYPE_COUNT);
+		query = Util.getQueryWithPaging(query, pagingParams, SlurmBgpsecDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setString(1, type);
+			// Set the filter to the query (if the param was added)
+			Util.setFilterParam(pagingParams, statement, 2);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			if (rs.next()) {
 				return rs.getInt(1);
