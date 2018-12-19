@@ -264,7 +264,11 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 				validatePrefixValue(startPrefix, prefixLength, START_PREFIX, validationErrors);
 				if (endPrefix == null) {
 					validationErrors.add(new ValidationError(OBJECT_NAME, END_PREFIX, null, ValidationErrorType.NULL));
+				} else if (type.equals(TYPE_FILTER)) {
+					// It shouldn't have a max prefix length, so ignore it
+					validateFilterEndPrefixValue(startPrefix, endPrefix, prefixLength, validationErrors);
 				} else {
+					// The end prefix of an assertion must be a valid IP block and the last
 					validatePrefixValue(endPrefix, prefixMaxLength == null ? prefixLength : prefixMaxLength, END_PREFIX,
 							validationErrors);
 				}
@@ -349,6 +353,37 @@ public class SlurmPrefixDbObject extends SlurmPrefix implements DatabaseObject {
 		if (!ip.or(mask).equals(mask)) {
 			validationErrors
 					.add(new ValidationError(OBJECT_NAME, prefixFieldId, prefix, ValidationErrorType.UNEXPECTED_VALUE));
+		}
+	}
+
+	/**
+	 * Validate the end prefix value to assert that's the last IP of an IP block
+	 * (use only for filters), if there's an error then add it to the
+	 * <code>validationErrors</code> list
+	 * 
+	 * @param startPrefix
+	 * @param endPrefix
+	 * @param prefixLength
+	 * @param validationErrors
+	 */
+	private void validateFilterEndPrefixValue(byte[] startPrefix, byte[] endPrefix, int prefixLength,
+			List<ValidationError> validationErrors) {
+		int bytesBase = prefixLength / 8;
+		int bitsBase = prefixLength % 8;
+		byte[] prefixLengthMask = new byte[startPrefix.length];
+		int currByte = bytesBase;
+		if (bitsBase > 0) {
+			prefixLengthMask[currByte++] |= ((byte) (255 >> bitsBase));
+		}
+		for (; currByte < prefixLengthMask.length; currByte++) {
+			prefixLengthMask[currByte] |= 255;
+		}
+		BigInteger startIp = new BigInteger(startPrefix);
+		BigInteger endIp = new BigInteger(endPrefix);
+		BigInteger mask = new BigInteger(prefixLengthMask);
+		if (!startIp.or(mask).equals(endIp)) {
+			validationErrors
+					.add(new ValidationError(OBJECT_NAME, END_PREFIX, endPrefix, ValidationErrorType.UNEXPECTED_VALUE));
 		}
 	}
 }
