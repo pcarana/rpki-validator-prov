@@ -51,3 +51,6 @@ select var_id,
   from validation_run
  where tal_id = ?
  order by var_id desc;
+
+#getLastRowid
+select seq_validation_run.currval;

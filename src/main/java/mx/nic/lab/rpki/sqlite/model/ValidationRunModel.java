@@ -39,6 +39,7 @@ public class ValidationRunModel extends DatabaseModel {
 	private static final String CREATE_REPOSITORY_RELATION = "createRepositoryRelation";
 	private static final String DELETE_OLD = "deleteOld";
 	private static final String UPDATE = "update";
+	private static final String GET_LAST_ROWID = "getLastRowid";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -151,7 +152,7 @@ public class ValidationRunModel extends DatabaseModel {
 			stored.storeToDatabase(statement);
 			int created = executeUpdate(statement, getModelClass(), logger);
 			if (created > 0) {
-				newValidationRun.setId(getLastRowid(connection, getModelClass(), logger));
+				newValidationRun.setId(getLastRowid(connection));
 				storeRelatedObjects(newValidationRun, connection);
 				result = newValidationRun.getId();
 			}
@@ -259,6 +260,24 @@ public class ValidationRunModel extends DatabaseModel {
 			statement.setLong(2, rpkiRepositoryId);
 			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
+		}
+	}
+
+	/**
+	 * Get the last rowid used in an insert statement, using object sequence
+	 * 
+	 * @param connection
+	 * @return the last inserted ID
+	 * @throws SQLException
+	 */
+	private static Long getLastRowid(Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_LAST_ROWID);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			ResultSet resultSet = executeQuery(statement, getModelClass(), logger);
+			if (!resultSet.next()) {
+				return 1L;
+			}
+			return resultSet.getLong(1);
 		}
 	}
 

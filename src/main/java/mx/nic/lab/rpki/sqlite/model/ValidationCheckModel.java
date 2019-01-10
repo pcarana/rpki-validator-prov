@@ -37,6 +37,7 @@ public class ValidationCheckModel extends DatabaseModel {
 	private static final String GET_LAST_PARAMETER_ID = "getLastParameterId";
 	private static final String CREATE = "create";
 	private static final String CREATE_PARAMETER = "createParameter";
+	private static final String GET_LAST_ROWID = "getLastRowid";
 
 	/**
 	 * Loads the queries corresponding to this model, based on the QUERY_GROUP
@@ -80,7 +81,7 @@ public class ValidationCheckModel extends DatabaseModel {
 			if (created < 1) {
 				return null;
 			}
-			newValidationCheck.setId(getLastRowid(connection, getModelClass(), logger));
+			newValidationCheck.setId(getLastRowid(connection));
 			storeRelatedObjects(newValidationCheck, connection);
 			return newValidationCheck.getId();
 		}
@@ -205,6 +206,24 @@ public class ValidationCheckModel extends DatabaseModel {
 				return 0L;
 			}
 			return rs.getLong(1);
+		}
+	}
+
+	/**
+	 * Get the last rowid used in an insert statement, using object sequence
+	 * 
+	 * @param connection
+	 * @return the last inserted ID
+	 * @throws SQLException
+	 */
+	private static Long getLastRowid(Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_LAST_ROWID);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			ResultSet resultSet = executeQuery(statement, getModelClass(), logger);
+			if (!resultSet.next()) {
+				return 1L;
+			}
+			return resultSet.getLong(1);
 		}
 	}
 

@@ -88,6 +88,9 @@ public class RpkiRepositoryModel extends DatabaseModel {
 				return null;
 			}
 			stored = getByUniqueFields(stored, connection);
+			if (stored == null) {
+				return null;
+			}
 			newRpkiRepository.setId(stored.getId());
 			storeRelatedObjects(newRpkiRepository, connection);
 			return newRpkiRepository.getId();
@@ -328,6 +331,9 @@ public class RpkiRepositoryModel extends DatabaseModel {
 			throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(rpkiRepository, GET_BY_UNIQUE, connection)) {
 			ResultSet resultSet = executeQuery(statement, getModelClass(), logger);
+			if (!resultSet.next()) {
+				return null;
+			}
 			RpkiRepositoryDbObject found = new RpkiRepositoryDbObject(resultSet);
 			loadRelatedObjects(found, connection);
 			return found;

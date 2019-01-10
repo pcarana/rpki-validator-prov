@@ -31,3 +31,6 @@ insert into validation_check_parameters (
        vcp_id,
        vcp_parameters)
 values (?, ?, ?);
+
+#getLastRowid
+select seq_validation_check.currval;

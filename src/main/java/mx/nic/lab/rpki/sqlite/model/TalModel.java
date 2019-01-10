@@ -179,6 +179,9 @@ public class TalModel extends DatabaseModel {
 				return null;
 			}
 			stored = getByUniqueFields(stored, connection);
+			if (stored == null) {
+				return null;
+			}
 			newTal.setId(stored.getId());
 			storeRelatedObjects(newTal, connection);
 			return newTal.getId();
@@ -314,6 +317,9 @@ public class TalModel extends DatabaseModel {
 	private static TalDbObject getByUniqueFields(Tal tal, Connection connection) throws SQLException {
 		try (PreparedStatement statement = prepareUniqueSearch(tal, GET_BY_UNIQUE, connection)) {
 			ResultSet resultSet = executeQuery(statement, getModelClass(), logger);
+			if (!resultSet.next()) {
+				return null;
+			}
 			TalDbObject found = new TalDbObject(resultSet);
 			loadRelatedObjects(found, false, connection);
 			return found;

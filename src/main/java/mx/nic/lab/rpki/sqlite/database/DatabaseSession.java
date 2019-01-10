@@ -148,8 +148,7 @@ public class DatabaseSession {
 		BasicDataSource sqliteDataSource = new BasicDataSource();
 		sqliteDataSource.setDriverClassName(driverClassName);
 		sqliteDataSource.setUrl(url);
-		// Allow only one connection to avoid collisions when the DB is locked
-		sqliteDataSource.setMaxTotal(1);
+		sqliteDataSource.setDefaultAutoCommit(true);
 
 		// Load the test query, if not present then load the most common
 		// (http://stackoverflow.com/questions/3668506)
@@ -219,7 +218,10 @@ public class DatabaseSession {
 	 */
 	public static Connection getConnection() throws SQLException {
 		synchronized (DatabaseSession.class) {
-			return dataSource.getConnection();
+			// Set autocommit to true
+			Connection con = dataSource.getConnection();
+			con.setAutoCommit(true);
+			return con;
 		}
 	}
 }
