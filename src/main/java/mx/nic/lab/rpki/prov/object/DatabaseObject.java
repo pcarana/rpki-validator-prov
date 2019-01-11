@@ -17,9 +17,7 @@ import mx.nic.lab.rpki.db.exception.ValidationException;
 public interface DatabaseObject {
 
 	/**
-	 * Format used by SQLite to represent dates as TEXT fields (ISO8601, check
-	 * <a href="https://www.sqlite.org/datatype3.html#date_and_time_datatype">SQLite
-	 * Date and Time Datatype</a>)
+	 * Format used to represent dates as TEXT fields (ISO8601)
 	 */
 	public static final String DATE_AS_TEXT_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 

@@ -11,8 +11,7 @@ import mx.nic.lab.rpki.prov.database.DatabaseSession;
 
 /**
  * Main class that SHOULD be used to execute all the queries at DB in a
- * synchronous way; this is done to avoid an SQLITE_BUSY error when the database
- * is locked
+ * synchronous way
  *
  */
 public class DatabaseModel {

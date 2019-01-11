@@ -1,4 +1,4 @@
-package mx.nic.lab.rpki.sqlite;
+package mx.nic.lab.rpki.prov;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

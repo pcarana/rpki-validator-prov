@@ -25,7 +25,7 @@ import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 import mx.nic.lab.rpki.db.exception.InitializationException;
 
 /**
- * Instance to handle Database session from a SQLite DB
+ * Instance to handle a database session
  *
  */
 public class DatabaseSession {
@@ -145,25 +145,25 @@ public class DatabaseSession {
 			throw new InitializationException("I can't find a data source in the configuration.");
 		}
 
-		BasicDataSource sqliteDataSource = new BasicDataSource();
-		sqliteDataSource.setDriverClassName(driverClassName);
-		sqliteDataSource.setUrl(url);
-		sqliteDataSource.setDefaultAutoCommit(true);
+		BasicDataSource dataSource = new BasicDataSource();
+		dataSource.setDriverClassName(driverClassName);
+		dataSource.setUrl(url);
+		dataSource.setDefaultAutoCommit(true);
 
 		// Load the test query, if not present then load the most common
 		// (http://stackoverflow.com/questions/3668506)
 		String testQuery = config.getProperty("testQuery", "select 1");
 		try {
-			testDatabase(sqliteDataSource, testQuery);
+			testDatabase(dataSource, testQuery);
 		} catch (SQLException e) {
 			throw new InitializationException("The database connection test yielded failure.", e);
 		}
 		try {
-			createTables(sqliteDataSource);
+			createTables(dataSource);
 		} catch (IOException | SQLException e) {
 			throw new InitializationException("The database tables creation failed.", e);
 		}
-		return sqliteDataSource;
+		return dataSource;
 	}
 
 	private static void testDatabase(BasicDataSource ds, String testQuery) throws SQLException {

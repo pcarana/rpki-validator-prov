@@ -450,7 +450,7 @@ public class SlurmPrefixModel extends DatabaseModel {
 	 * Find all the candidate {@link SlurmPrefix}s that are covering aggregates of
 	 * the prefix received, this list still needs some work to effectively determine
 	 * if any of the {@link SlurmPrefix}s is a covering aggregate of the prefix (the
-	 * SQLite database doesn't support binary operators on BLOBs, so thats why only
+	 * database doesn't fully support binary operators on BINARYs, so thats why only
 	 * the candidates are returned)
 	 * 
 	 * @param prefix
@@ -480,9 +480,9 @@ public class SlurmPrefixModel extends DatabaseModel {
 	/**
 	 * Find all the candidate {@link SlurmPrefix}s that are more specific than the
 	 * prefix received, this list still needs some work to effectively determine if
-	 * any of the {@link SlurmPrefix}s is more specific than the prefix (the SQLite
-	 * database doesn't support binary operators on BLOBs, so thats why only the
-	 * candidates are returned)
+	 * any of the {@link SlurmPrefix}s is more specific than the prefix (the
+	 * database doesn't fully support binary operators on BINARYs, so thats why only
+	 * the candidates are returned)
 	 * 
 	 * @param prefix
 	 * @param prefixLength
