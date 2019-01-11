@@ -62,6 +62,7 @@ select rpo_id,
   from roa
  where roa_start_prefix <= ?
    and roa_prefix_max_length < ?
+   and roa_prefix_family = ?
  order by roa_start_prefix desc, roa_prefix_length desc;
 
 #findMoreSpecific
@@ -77,6 +78,7 @@ select rpo_id,
   from roa
  where roa_start_prefix >= ?
    and roa_prefix_length > ?
+   and roa_prefix_family = ?
  order by roa_start_prefix, roa_prefix_length;
 
 #existAsn

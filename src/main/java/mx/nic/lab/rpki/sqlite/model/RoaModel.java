@@ -151,31 +151,30 @@ public class RoaModel extends DatabaseModel {
 	/**
 	 * Find all the candidate {@link Roa}s that are covering aggregates of the
 	 * prefix received, this list still needs some work to effectively determine if
-	 * any of the {@link Roa}s is a covering aggregate of the prefix (the SQLite
-	 * database doesn't support binary operators on BLOBs, so thats why only the
-	 * candidates are returned)
+	 * any of the {@link Roa}s is a covering aggregate of the prefix (the database
+	 * doesn't fully support binary operators on BINARYs, so thats why only the
+	 * candidates are returned). Only the basic info of the ROAs is loaded.
 	 * 
 	 * @param prefix
 	 * @param prefixLength
+	 * @param familyType
 	 * @param connection
 	 * @return List of candidate {@link Roa}s that are covering aggregate of the
 	 *         received prefix
 	 * @throws SQLException
 	 */
-	public static List<Roa> findCoveringAggregate(byte[] prefix, Integer prefixLength, Connection connection)
-			throws SQLException {
+	public static List<Roa> findCoveringAggregate(byte[] prefix, Integer prefixLength, Integer familyType,
+			Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(FIND_COVERING_AGGREGATE);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, prefix);
 			statement.setInt(2, prefixLength);
+			statement.setInt(3, familyType);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Roa> roas = new ArrayList<Roa>();
 			while (rs.next()) {
-				RoaDbObject roa = new RoaDbObject(rs);
-				loadRelatedObjects(roa, connection);
-				roas.add(roa);
+				roas.add(new RoaDbObject(rs));
 			}
-
 			return roas;
 		}
 	}
@@ -183,29 +182,29 @@ public class RoaModel extends DatabaseModel {
 	/**
 	 * Find all the candidate {@link Roa}s that are more specific than the prefix
 	 * received, this list still needs some work to effectively determine if any of
-	 * the {@link Roa}s is more specific than the prefix (the SQLite database
-	 * doesn't support binary operators on BLOBs, so thats why only the candidates
-	 * are returned)
+	 * the {@link Roa}s is more specific than the prefix (the database doesn't fully
+	 * support binary operators on BINARYs, so thats why only the candidates are
+	 * returned). Only the basic info of the ROAs is loaded.
 	 * 
 	 * @param prefix
 	 * @param prefixLength
+	 * @param familyType
 	 * @param connection
 	 * @return List of candidate {@link Roa}s that are more specific than the
 	 *         received prefix
 	 * @throws SQLException
 	 */
-	public static List<Roa> findMoreSpecific(byte[] prefix, Integer prefixLength, Connection connection)
-			throws SQLException {
+	public static List<Roa> findMoreSpecific(byte[] prefix, Integer prefixLength, Integer familyType,
+			Connection connection) throws SQLException {
 		String query = getQueryGroup().getQuery(FIND_MORE_SPECIFIC);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, prefix);
 			statement.setInt(2, prefixLength);
+			statement.setInt(3, familyType);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<Roa> roas = new ArrayList<Roa>();
 			while (rs.next()) {
-				RoaDbObject roa = new RoaDbObject(rs);
-				loadRelatedObjects(roa, connection);
-				roas.add(roa);
+				roas.add(new RoaDbObject(rs));
 			}
 
 			return roas;

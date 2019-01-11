@@ -27,13 +27,14 @@ public class RouteValidationModel {
 	 * @param asn
 	 * @param prefix
 	 * @param prefixLength
+	 * @param familyType
 	 * @param fullCheck
 	 * @param connection
 	 * @return The {@link RouteValidation} with the result of the validation
 	 * @throws SQLException
 	 */
-	public static RouteValidation validate(Long asn, byte[] prefix, Integer prefixLength, boolean fullCheck,
-			Connection connection) throws SQLException {
+	public static RouteValidation validate(Long asn, byte[] prefix, Integer prefixLength, Integer familyType,
+			boolean fullCheck, Connection connection) throws SQLException {
 		// If there's an assertion then stop the search and return the assertion result
 		RouteValidation slurmValidation = findSlurmAssertion(asn, prefix, prefixLength, fullCheck, connection);
 		if (slurmValidation != null) {
@@ -45,7 +46,7 @@ public class RouteValidationModel {
 			return slurmValidation;
 		}
 		// Well, then go for the ROA match(es)
-		return findRoaValidation(asn, prefix, prefixLength, fullCheck, connection);
+		return findRoaValidation(asn, prefix, prefixLength, familyType, fullCheck, connection);
 
 	}
 
@@ -130,12 +131,13 @@ public class RouteValidationModel {
 	 * @param asn
 	 * @param prefix
 	 * @param prefixLength
+	 * @param familyType
 	 * @param connection
 	 * @return
 	 * @throws SQLException
 	 */
-	private static RouteValidation findRoaValidation(Long asn, byte[] prefix, Integer prefixLength, boolean fullCheck,
-			Connection connection) throws SQLException {
+	private static RouteValidation findRoaValidation(Long asn, byte[] prefix, Integer prefixLength, Integer familyType,
+			boolean fullCheck, Connection connection) throws SQLException {
 		// Go for the exact ROA match
 		Roa matchedRoa = RoaModel.findExactMatch(prefix, prefixLength, connection);
 		if (matchedRoa != null) {
@@ -149,24 +151,26 @@ public class RouteValidationModel {
 		}
 		// Check if there's a ROA covering the received prefix (a.k.a the received
 		// prefix is more specific than ROA)
-		List<Roa> candidateRoas = RoaModel.findCoveringAggregate(prefix, prefixLength, connection);
+		List<Roa> candidateRoas = RoaModel.findCoveringAggregate(prefix, prefixLength, familyType, connection);
 		for (Roa roa : candidateRoas) {
 			// The prefix is effectively a son of the ROA
 			if (!isPrefixInRange(prefix, roa.getStartPrefix(), roa.getPrefixLength())) {
 				continue;
 			}
 			AsState asState = asn.equals(roa.getAsn()) ? AsState.MATCHING : AsState.NON_MATCHING;
+			roa = RoaModel.getById(roa.getId(), connection);
 			return createRoaRouteValidation(ValidityState.INVALID, PrefixState.MORE_SPECIFIC, asState, roa, fullCheck);
 		}
 		// Check if there's a ROA more specific (a.k.a the received prefix is a
 		// covering aggregate of the ROA)
-		candidateRoas = RoaModel.findMoreSpecific(prefix, prefixLength, connection);
+		candidateRoas = RoaModel.findMoreSpecific(prefix, prefixLength, familyType, connection);
 		for (Roa roa : candidateRoas) {
 			// The ROA is effectively a son of the prefix
 			if (!isPrefixInRange(roa.getStartPrefix(), prefix, prefixLength)) {
 				continue;
 			}
 			AsState asState = asn.equals(roa.getAsn()) ? AsState.MATCHING : AsState.NON_MATCHING;
+			roa = RoaModel.getById(roa.getId(), connection);
 			return createRoaRouteValidation(ValidityState.UNKNOWN, PrefixState.COVERING_AGGREGATE, asState, roa,
 					fullCheck);
 		}
