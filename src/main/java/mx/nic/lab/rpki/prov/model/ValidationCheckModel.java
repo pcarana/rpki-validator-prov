@@ -137,6 +137,7 @@ public class ValidationCheckModel extends DatabaseModel {
 			List<ValidationCheck> validationChecks = new ArrayList<ValidationCheck>();
 			while (rs.next()) {
 				ValidationCheckDbObject validationCheck = new ValidationCheckDbObject(rs);
+				loadRelatedObjects(validationCheck, connection);
 				validationChecks.add(validationCheck);
 			}
 			Integer totalFound = getAllChecksByTalCount(talId, pagingParams, connection);
