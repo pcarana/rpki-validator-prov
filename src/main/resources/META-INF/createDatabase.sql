@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS validation_check (
     vac_id BIGINT DEFAULT seq_validation_check.nextval,
     var_id BIGINT,
     vac_location VARCHAR(400) NOT NULL,
+    vac_file_type VARCHAR(50) NOT NULL,
     vac_status VARCHAR(30) NOT NULL,
     vac_key VARCHAR(100),
     PRIMARY KEY (vac_id),

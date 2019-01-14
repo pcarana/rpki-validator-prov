@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import mx.nic.lab.rpki.db.pojo.ListResult;
+import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.ValidationCheck;
 import mx.nic.lab.rpki.prov.database.QueryGroup;
 import mx.nic.lab.rpki.prov.object.ValidationCheckDbObject;
@@ -35,6 +37,8 @@ public class ValidationCheckModel extends DatabaseModel {
 	private static final String GET_BY_VALIDATION_RUN_ID = "getByValidationRunId";
 	private static final String GET_PARAMETERS = "getParameters";
 	private static final String GET_LAST_PARAMETER_ID = "getLastParameterId";
+	private static final String GET_LAST_SUCCESSFUL_CHECKS_BY_TAL = "getLastSuccessfulChecksByTal";
+	private static final String GET_LAST_SUCCESSFUL_CHECKS_BY_TAL_COUNT = "getLastSuccessfulChecksByTalCount";
 	private static final String CREATE = "create";
 	private static final String CREATE_PARAMETER = "createParameter";
 	private static final String GET_LAST_ROWID = "getLastRowid";
@@ -112,6 +116,35 @@ public class ValidationCheckModel extends DatabaseModel {
 	}
 
 	/**
+	 * Get the validation checks related to the last successful validation run of a
+	 * TAL
+	 * 
+	 * @param talId
+	 * @param pagingParams
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	public static ListResult<ValidationCheck> getLastSuccessfulChecksByTal(Long talId, PagingParameters pagingParams,
+			Connection connection) throws SQLException {
+		String query = getQueryGroup().getQuery(GET_LAST_SUCCESSFUL_CHECKS_BY_TAL);
+		query = Util.getQueryWithPaging(query, pagingParams, ValidationCheckDbObject.propertyToColumnMap);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setLong(1, talId);
+			// Set the filter to the query (if the param was added)
+			Util.setFilterParam(pagingParams, statement, 2);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			List<ValidationCheck> validationChecks = new ArrayList<ValidationCheck>();
+			while (rs.next()) {
+				ValidationCheckDbObject validationCheck = new ValidationCheckDbObject(rs);
+				validationChecks.add(validationCheck);
+			}
+			Integer totalFound = getAllChecksByTalCount(talId, pagingParams, connection);
+			return new ListResult<ValidationCheck>(validationChecks, totalFound);
+		}
+	}
+
+	/**
 	 * Get the list of parameters related to a Validation Check ID
 	 * 
 	 * @param validationCheckId
@@ -184,6 +217,32 @@ public class ValidationCheckModel extends DatabaseModel {
 			statement.setString(3, parameter);
 			int created = executeUpdate(statement, getModelClass(), logger);
 			return created > 0;
+		}
+	}
+
+	/**
+	 * Get the count of all the {@link ValidationCheck}s related to the last
+	 * successful validation of a TAL, return 0 when no records are found
+	 * 
+	 * @param talId
+	 * @param pagingParams
+	 * @param connection
+	 * @return The count of all {@link ValidationCheck}s, or 0 when no data is found
+	 * @throws SQLException
+	 */
+	private static Integer getAllChecksByTalCount(Long talId, PagingParameters pagingParams, Connection connection)
+			throws SQLException {
+		String query = getQueryGroup().getQuery(GET_LAST_SUCCESSFUL_CHECKS_BY_TAL_COUNT);
+		query = Util.getQueryWithPaging(query, pagingParams, ValidationCheckDbObject.propertyToColumnMap);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setLong(1, talId);
+			// Set the filter to the query (if the param was added)
+			Util.setFilterParam(pagingParams, statement, 2);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+			return 0;
 		}
 	}
 

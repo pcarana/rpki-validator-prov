@@ -4,12 +4,16 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
+import mx.nic.lab.rpki.db.pojo.ListResult;
+import mx.nic.lab.rpki.db.pojo.PagingParameters;
+import mx.nic.lab.rpki.db.pojo.ValidationCheck;
 import mx.nic.lab.rpki.db.pojo.ValidationRun;
 import mx.nic.lab.rpki.db.spi.ValidationRunDAO;
 import mx.nic.lab.rpki.prov.database.DatabaseSession;
+import mx.nic.lab.rpki.prov.model.ValidationCheckModel;
 import mx.nic.lab.rpki.prov.model.ValidationRunModel;
-import mx.nic.lab.rpki.prov.object.ValidationRunDbObject;
 import mx.nic.lab.rpki.prov.object.DatabaseObject.Operation;
+import mx.nic.lab.rpki.prov.object.ValidationRunDbObject;
 
 /**
  * Implementation to retrieve the Validation runs
@@ -42,6 +46,16 @@ public class ValidationRunDAOImpl implements ValidationRunDAO {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			ValidationRunModel.deleteOldValidationRuns(validationRun, connection);
 			return result;
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public ListResult<ValidationCheck> getLastSuccessfulChecksByTal(Long talId, PagingParameters pagingParams)
+			throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return ValidationCheckModel.getLastSuccessfulChecksByTal(talId, pagingParams, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
