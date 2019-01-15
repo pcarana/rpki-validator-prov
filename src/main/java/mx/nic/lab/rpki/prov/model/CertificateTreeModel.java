@@ -15,12 +15,13 @@ import mx.nic.lab.rpki.db.cert.tree.GbrNode;
 import mx.nic.lab.rpki.db.cert.tree.ResourceNode;
 import mx.nic.lab.rpki.db.cert.tree.RoaNode;
 import mx.nic.lab.rpki.db.pojo.Gbr;
+import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Roa;
 import mx.nic.lab.rpki.db.pojo.RpkiObject;
 import mx.nic.lab.rpki.db.pojo.RpkiObject.Type;
+import mx.nic.lab.rpki.db.pojo.Tal;
 import mx.nic.lab.rpki.prov.database.QueryGroup;
 import mx.nic.lab.rpki.prov.object.RpkiObjectDbObject;
-import mx.nic.lab.rpki.db.pojo.Tal;
 
 /**
  * Model to retrieve RPKI Objects as Certificate Trees from the database
@@ -39,7 +40,7 @@ public class CertificateTreeModel extends DatabaseModel {
 	private static QueryGroup queryGroup = null;
 
 	// Queries IDs used by this model
-	private static final String GET_FROM_ROOT = "geFromRoot";
+	private static final String GET_FROM_ROOT = "getFromRoot";
 	private static final String COUNT_CHILDS = "countChilds";
 
 	/**
@@ -71,11 +72,13 @@ public class CertificateTreeModel extends DatabaseModel {
 	 * {@link Tal}
 	 * 
 	 * @param tal
+	 * @param pagingParams
 	 * @param connection
 	 * @return
 	 * @throws SQLException
 	 */
-	public static CertificationTreeNode findFromRoot(Tal tal, Connection connection) throws SQLException {
+	public static CertificationTreeNode findFromRoot(Tal tal, PagingParameters pagingParams, Connection connection)
+			throws SQLException {
 		// Start setting the root node
 		CertificateNode root = new CertificateNode();
 		root.setId(tal.getId());
@@ -86,7 +89,7 @@ public class CertificateTreeModel extends DatabaseModel {
 
 		// And get the rest of the data from the DB (loads only the direct childs, isn't
 		// recursive)
-		loadChilds(root, connection);
+		loadChilds(root, pagingParams, connection);
 		return root;
 	}
 
@@ -95,11 +98,13 @@ public class CertificateTreeModel extends DatabaseModel {
 	 * Certificate distinct than the root (TALs certificate)
 	 * 
 	 * @param certId
+	 * @param pagingParams
 	 * @param connection
 	 * @return
 	 * @throws SQLException
 	 */
-	public static CertificationTreeNode findFromChild(Long certId, Connection connection) throws SQLException {
+	public static CertificationTreeNode findFromChild(Long certId, PagingParameters pagingParams, Connection connection)
+			throws SQLException {
 		// Must exist, and must be a certificate
 		RpkiObject rootObject = RpkiObjectModel.getById(certId, connection);
 		if (rootObject == null
@@ -113,7 +118,7 @@ public class CertificateTreeModel extends DatabaseModel {
 
 		// And get the rest of the data from the DB (loads only the direct childs, isn't
 		// recursive)
-		loadChilds(root, connection);
+		loadChilds(root, pagingParams, connection);
 		return root;
 	}
 
@@ -121,11 +126,14 @@ public class CertificateTreeModel extends DatabaseModel {
 	 * Load the childs related to the root parent
 	 * 
 	 * @param root
+	 * @param pagingParams
 	 * @param connection
 	 * @throws SQLException
 	 */
-	private static void loadChilds(CertificateNode root, Connection connection) throws SQLException {
+	private static void loadChilds(CertificateNode root, PagingParameters pagingParams, Connection connection)
+			throws SQLException {
 		String query = getQueryGroup().getQuery(GET_FROM_ROOT);
+		query = Util.getQueryWithPaging(query, pagingParams, RpkiObjectDbObject.propertyToColumnMap);
 		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
 			statement.setBytes(1, root.getSubjectKeyIdentifier());
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
@@ -169,7 +177,7 @@ public class CertificateTreeModel extends DatabaseModel {
 				child.setSubjectKeyIdentifier(subjectKeyIdentifier);
 				root.getChilds().add(child);
 			}
-			root.setChildCount(root.getChilds().size());
+			root.setChildCount(getChildCount(root.getSubjectKeyIdentifier(), connection));
 		}
 	}
 

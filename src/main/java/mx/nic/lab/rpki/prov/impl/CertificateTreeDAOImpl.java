@@ -5,6 +5,7 @@ import java.sql.SQLException;
 
 import mx.nic.lab.rpki.db.cert.tree.CertificationTreeNode;
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
+import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.Tal;
 import mx.nic.lab.rpki.db.spi.CertificateTreeDAO;
 import mx.nic.lab.rpki.prov.database.DatabaseSession;
@@ -18,22 +19,24 @@ import mx.nic.lab.rpki.prov.model.TalModel;
 public class CertificateTreeDAOImpl implements CertificateTreeDAO {
 
 	@Override
-	public CertificationTreeNode getFromRoot(Long talId) throws ApiDataAccessException {
+	public CertificationTreeNode getFromRoot(Long talId, PagingParameters pagingParameters)
+			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			Tal tal = TalModel.getById(talId, connection);
 			if (tal == null) {
 				return null;
 			}
-			return CertificateTreeModel.findFromRoot(tal, connection);
+			return CertificateTreeModel.findFromRoot(tal, pagingParameters, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
 	}
 
 	@Override
-	public CertificationTreeNode getFromChild(Long certId) throws ApiDataAccessException {
+	public CertificationTreeNode getFromChild(Long certId, PagingParameters pagingParameters)
+			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
-			return CertificateTreeModel.findFromChild(certId, connection);
+			return CertificateTreeModel.findFromChild(certId, pagingParameters, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
