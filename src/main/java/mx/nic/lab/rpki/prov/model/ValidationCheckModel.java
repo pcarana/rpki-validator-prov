@@ -6,14 +6,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
 import mx.nic.lab.rpki.db.pojo.ListResult;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.ValidationCheck;
+import mx.nic.lab.rpki.db.pojo.ValidationCheck.Status;
 import mx.nic.lab.rpki.prov.database.QueryGroup;
 import mx.nic.lab.rpki.prov.object.ValidationCheckDbObject;
 
@@ -39,6 +42,7 @@ public class ValidationCheckModel extends DatabaseModel {
 	private static final String GET_LAST_PARAMETER_ID = "getLastParameterId";
 	private static final String GET_LAST_SUCCESSFUL_CHECKS_BY_TAL = "getLastSuccessfulChecksByTal";
 	private static final String GET_LAST_SUCCESSFUL_CHECKS_BY_TAL_COUNT = "getLastSuccessfulChecksByTalCount";
+	private static final String GET_LAST_SUCCESSFUL_CHECKS_SUMM_BY_TAL = "getLastSuccessfulChecksSummByTal";
 	private static final String CREATE = "create";
 	private static final String CREATE_PARAMETER = "createParameter";
 	private static final String GET_LAST_ROWID = "getLastRowid";
@@ -135,13 +139,52 @@ public class ValidationCheckModel extends DatabaseModel {
 			Util.setFilterParam(pagingParams, statement, 2);
 			ResultSet rs = executeQuery(statement, getModelClass(), logger);
 			List<ValidationCheck> validationChecks = new ArrayList<ValidationCheck>();
-			while (rs.next()) {
+			if (!rs.next()) {
+				return null;
+			}
+			do {
 				ValidationCheckDbObject validationCheck = new ValidationCheckDbObject(rs);
 				loadRelatedObjects(validationCheck, connection);
 				validationChecks.add(validationCheck);
-			}
+			} while (rs.next());
 			Integer totalFound = getAllChecksByTalCount(talId, pagingParams, connection);
 			return new ListResult<ValidationCheck>(validationChecks, totalFound);
+		}
+	}
+
+	/**
+	 * Get the summary of the validation checks related to the last successful
+	 * validation run of a TAL
+	 * 
+	 * @param talId
+	 * @param connection
+	 * @return
+	 * @throws SQLException
+	 */
+	public static Map<Status, Map<String, Long>> getLastSuccessfulChecksSummByTal(Long talId, Connection connection)
+			throws SQLException {
+		String query = getQueryGroup().getQuery(GET_LAST_SUCCESSFUL_CHECKS_SUMM_BY_TAL);
+		try (PreparedStatement statement = prepareStatement(connection, query, getModelClass())) {
+			statement.setLong(1, talId);
+			ResultSet rs = executeQuery(statement, getModelClass(), logger);
+			Map<Status, Map<String, Long>> summaryMap = new HashMap<>();
+			if (!rs.next()) {
+				return null;
+			}
+			do {
+				Status status;
+				try {
+					status = Enum.valueOf(Status.class, rs.getString(1));
+				} catch (IllegalArgumentException e) {
+					continue;
+				}
+				if (!summaryMap.containsKey(status)) {
+					Map<String, Long> fileTypeMap = new HashMap<>();
+					summaryMap.put(status, fileTypeMap);
+				}
+				summaryMap.get(status).put(rs.getString(2), rs.getLong(3));
+			} while (rs.next());
+			return summaryMap;
 		}
 	}
 

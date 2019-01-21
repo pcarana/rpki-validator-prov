@@ -2,11 +2,13 @@ package mx.nic.lab.rpki.prov.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Map;
 
 import mx.nic.lab.rpki.db.exception.ApiDataAccessException;
 import mx.nic.lab.rpki.db.pojo.ListResult;
 import mx.nic.lab.rpki.db.pojo.PagingParameters;
 import mx.nic.lab.rpki.db.pojo.ValidationCheck;
+import mx.nic.lab.rpki.db.pojo.ValidationCheck.Status;
 import mx.nic.lab.rpki.db.pojo.ValidationRun;
 import mx.nic.lab.rpki.db.spi.ValidationRunDAO;
 import mx.nic.lab.rpki.prov.database.DatabaseSession;
@@ -56,6 +58,15 @@ public class ValidationRunDAOImpl implements ValidationRunDAO {
 			throws ApiDataAccessException {
 		try (Connection connection = DatabaseSession.getConnection()) {
 			return ValidationCheckModel.getLastSuccessfulChecksByTal(talId, pagingParams, connection);
+		} catch (SQLException e) {
+			throw new ApiDataAccessException(e);
+		}
+	}
+
+	@Override
+	public Map<Status, Map<String, Long>> getLastSuccessfulCheckSummByTal(Long talId) throws ApiDataAccessException {
+		try (Connection connection = DatabaseSession.getConnection()) {
+			return ValidationCheckModel.getLastSuccessfulChecksSummByTal(talId, connection);
 		} catch (SQLException e) {
 			throw new ApiDataAccessException(e);
 		}
