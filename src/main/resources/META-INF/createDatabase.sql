@@ -131,7 +131,7 @@ CREATE INDEX IF NOT EXISTS validation_check__validation_run_id_idx ON validation
 CREATE TABLE IF NOT EXISTS validation_check_parameters (
     vac_id BIGINT,
     vcp_id BIGINT,
-    vcp_parameters VARCHAR(100) NOT NULL,
+    vcp_parameters VARCHAR(200) NOT NULL,
     PRIMARY KEY (vac_id, vcp_id),
     FOREIGN KEY (vac_id) REFERENCES validation_check (vac_id) ON DELETE CASCADE
 );
