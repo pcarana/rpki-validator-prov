@@ -92,7 +92,7 @@ public class ValidationCheckDbObject extends ValidationCheck implements Database
 			statement.setNull(3, Types.VARCHAR);
 		}
 		if (getStatus() != null) {
-			statement.setString(4, getStatus().toString());
+			statement.setString(4, getStatus().toString().toLowerCase());
 		} else {
 			statement.setNull(4, Types.VARCHAR);
 		}
